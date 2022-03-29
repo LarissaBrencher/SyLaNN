@@ -1,9 +1,21 @@
+"""
+Creates dictionaries which contain the specifics for generating data,
+defining the SLNN's architecture and its training configurations.
+"""
+
 import operators as ops
 
 def readDictionaries():
+    """
+    Returns dictionaries which contain the specifics for generating data,
+    defining the SLNN's architecture and its training configurations.
+
+    :return: generateData_dict, net_dict, trainConfig_dict
+    :rtype: dict
+    """
     # for generating data
     # 16-08-21: currently using LBFGS optimizer always so no need to include in json name
-    exNum = 7 # numbering for 1 to 10 (examples in research project 2020-2022)
+    exNum = 7 # numbering for 1 to 7 (examples in research project 2020-2022)
 
     # 'lambda x : x + 8' # standard linear funtion to start with
     # 'lambda x : x**2 + 3*x - 7' # second degree polynomial

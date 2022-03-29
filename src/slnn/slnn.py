@@ -1,39 +1,82 @@
-# classes for SR layer, SR neural network, ... (SR architecture)
+"""
+Defines the structure of the Symbolic-Layered Neural Network.
+This includes the construction of the customized layer, the architecture of the overall network
+and the definition of the approximated penalty function.
+"""
+
 import numpy as np
 import torch
 import torch.nn as nn
-from torch.autograd import Variable
-from torch.utils.data import TensorDataset, DataLoader
 import operators as ops
-from inspect import signature
 import time
 import eq_print
 
+# TODO extract penalty function into separate file
 class L12Smooth(nn.Module):
+    """
+    A class for the approximated penalty function which inherits from the PyTorch nn.Module.
+    """
     def __init__(self):
+        """
+        Constructor method
+        """
         super(L12Smooth, self).__init__()
 
     def forward(self, input_tensor, a=0.01):
+        """
+        Returns the result of applying the penalty function to the input tensor with a
+        fixed threshold (for the approximation).
+
+        :param input\_tensor: Predicted weight matrix to be evaluated via smooth penalty function
+        :type input\_tensor: Tensor
+        :param a: Threshold for the approximation
+        :type a: float
+
+        :return: Penalized prediction
+        :rtype: Tensor
+        """
         return l12_smooth(input_tensor, a)
 
 
 def l12_smooth(input_tensor, a=0.01):
+    """
+    Penalty function which uses a smooth, approximated version of the Lp-norm with p=0.5.
+
+    :param input\_tensor: Predicted weight matrix to be evaluated via smooth penalty function
+    :type input\_tensor: Tensor
+    :param a: Threshold for the approximation
+    :type a: float
+
+    :return: Penalized prediction
+    :rtype: Tensor
+    """
     if type(input_tensor) == list:
         return sum([l12_smooth(tensor) for tensor in input_tensor])
 
     smooth_abs = torch.where(torch.abs(input_tensor) < a,
-                            torch.pow(input_tensor, 4) / (-8 * a ** 3) + torch.square(input_tensor) * 3 / 4 / a + 3 * a / 8,
-                            torch.abs(input_tensor))
+                torch.pow(input_tensor, 4) / (-8 * a ** 3) + torch.square(input_tensor) * 3 / 4 / a + 3 * a / 8,
+                torch.abs(input_tensor))
 
     return torch.sum(torch.sqrt(smooth_abs))
 
 
-class SRLayer(nn.Module):
-    def __init__(self, fcts=None, in_dim=None, init_W=None):
-        super().__init__()
+class SymLayer(nn.Module):
+    """
+    Definition of the customized layer of the Symbolic-Layered Neural Network (SLNN),
+    inherits from PyTorch's nn.Module.
+    """
+    def __init__(self, fcts=ops.default_func, in_dim=None, init_W=None):
+        """
+        Constructor method
 
-        if fcts is None:
-            fcts = ops.default_func
+        :param fcts: Activation functions per layer, default ops.default_func
+        :type fcts: list[objects]
+        :param in_dim: Dimension of input from layer, default None
+        :type in_dim: int
+        :param init_W: Pre-defined weight matrix, default None
+        :type init_W: Tensor
+        """
+        super().__init__()
         
         self.output = None
         self.n_fcts = len(fcts)
@@ -51,7 +94,15 @@ class SRLayer(nn.Module):
             self.W = nn.Parameter(self.init_W.clone().detach())
 
     def forward(self, x):
+        """
+        Applies the forward propagation method (definition per layer).
 
+        :param x: Input from previous layer
+        :type x: Tensor
+
+        :return: Input for next layer
+        :rtype: Tensor
+        """
         g = torch.matmul(x, self.W)
         self.output = []
 
@@ -71,44 +122,89 @@ class SRLayer(nn.Module):
         return self.output
 
     def get_weight(self):
+        """
+        Returns the weight matrix as NumPy array.
+        """
         return self.W.cpu().detach().numpy()
 
     def get_weight_tensor(self):
+        """
+        Returns the weight matrix as PyTorch tensor.
+        """
         return self.W.clone()
 
 
-class SRNet(nn.Module):
-    def __init__(self, n_hiddenLayers=2, fcts=None, init_W=None, data_dim=1):
-        super(SRNet, self).__init__()
+class SLNet(nn.Module):
+    """
+    Definition of the Symbolic-Layered Neural Network (SLNN) architecture,
+    inherits from PyTorch's nn.Module.
+    """
+    def __init__(self, n_hiddenLayers=2, fcts=ops.default_func, init_W=None, data_dim=1):
+        """
+        Constructor method
+
+        :param n_hiddenLayers: Number of hidden layers of the SLNN (depth), default 2
+        :type n_hiddenLayers: int
+        :param fcts: Activation functions per layer, default ops.default_func
+        :type fcts: list[objects]
+        :param init_W: Pre-defined weight matrix, default None
+        :type init_W: Tensor
+        :param data_dim: Number/dimension of variables from the given input data, default 1
+        :type data_dim: int
+        """
+        super(SLNet, self).__init__()
 
         self.depth = n_hiddenLayers
-        if fcts is None:
-            fcts = ops.default_func
         self.fcts = fcts
         layer_in_dim = [data_dim] + self.depth*[len(self.fcts)]
 
         if init_W is None:
-            layers = [SRLayer(fcts=fcts, in_dim=layer_in_dim[i]) for i in range(self.depth)]
+            layers = [SymLayer(fcts=fcts, in_dim=layer_in_dim[i]) for i in range(self.depth)]
             self.output_weight = nn.Parameter(torch.rand((layers[-1].n_fcts, 1)))
         else:
-            layers = [SRLayer(fcts=fcts, in_dim=layer_in_dim[i], init_W=init_W[i]) for i in range(self.depth)]
+            layers = [SymLayer(fcts=fcts, in_dim=layer_in_dim[i], init_W=init_W[i]) for i in range(self.depth)]
             self.output_weight = nn.Parameter(init_W[-1].clone().detach())
         
         self.hidden_layers = nn.Sequential(*layers)
 
     def forward(self, input):
+        """
+        Applies the forward propagation through the whole SLNN.
+
+        :param input: Initial data from the input layer
+        :type input: Tensor
+
+        :return: Result of the SLNN's forward propagation
+        :rtype: Tensor
+        """
         h = self.hidden_layers(input)
         return torch.matmul(h, self.output_weight)
 
     def get_weights(self):
+        """
+        Returns the weight matrices as list of NumPy arrays.
+        """
         return [self.hidden_layers[i].get_weight() for i in range(self.depth)] + \
                [self.output_weight.cpu().detach().numpy()]
 
     def get_weights_tensor(self):
+        """
+        Returns the weight matrices as list of PyTorch tensors.
+        """
         return [self.hidden_layers[i].get_weight_tensor() for i in range(self.depth)] + \
                [self.output_weight.clone()]
 
     def reg_term(self, W, lmb, regID):
+        """
+        Returns the regularization term depending on which type of regulariztion is chosen.
+
+        :param W: Weight matrix
+        :type W: Tensor
+        :param lmb: Regularization weight
+        :type lmb: float
+        :param regID: Specifies which kind of regularization method is applied
+        :type regID: int or None
+        """
         if regID is None:
             reg_val = 0
             return lmb * torch.tensor([reg_val])
@@ -135,16 +231,37 @@ class SRNet(nn.Module):
             reg_val = penalty(W)
             return lmb * reg_val
         else:
-            raise ValueError("Wrong value chosen for regularizarion loss (possible values: None, 0, 1, 2). \n Please re-evaluate the dictionary for training the Symbolic regression network.")
+            raise ValueError("Wrong value chosen for regularizarion loss (possible values: None, 0, 1, 2). \n Please re-evaluate the dictionary for training the Symbolic-Layered Neural Network.")
 
     def loss(self):
+        """
+        Returns the loss value (in this case the mean-squared error is chosen).
+        """
         return nn.MSELoss()
 
     def trainLBFGS_iteration(self, optimizer, data, target, reg_id):
+        """
+        Performs a single optimization step (LBFGS). Returns the training error (MSE).
+
+        :param optimizer: Specifices the applied optimizer (from torch.optim)
+        :type optimizer: object
+        :param data: Training data set
+        :type data: Tensor
+        :param target: Corresponding training targets
+        :type target: Tensor
+        :param reg_id: Specifies which kind of regularization method is applied
+        :type reg_id: int or None
+
+        :return: Training losses (MSE + regularization loss and only MSE)
+        :rtype: Tensor (with one element)
+        """
         train_loss = 0.
         criterion = self.loss()
             
         def closure():
+            """
+            A closure that reevaluates the model and returns the loss.
+            """
             optimizer.zero_grad()
             output = self(data)
             MSE_loss = criterion(output, target)
@@ -160,6 +277,18 @@ class SRNet(nn.Module):
         return train_loss, MSE_loss_plot
 
     def train(self, generatedDatasets_dict, trainConfig_dict):
+        """
+        Trains the SLNN with given datasets within set training configurations.
+        Allows LBFGS and ADAM as optimizers.
+
+        :param generatedDatasets_dict: Contains the training and testing data
+        :type generatedDatasets_dict: dict
+        :param trainConfig_dict: Contains the specifications for the SLNN training (number of epochs, regularization weight, learning rate, ...)
+        :type trainConfig_dict: dict
+
+        :return: Dictionary with results of the simulation
+        :rtype: dict
+        """
         train_loss_list = []          # Total loss (MSE + regularization)
         train_loss_onlyMSE_list = [] # only MSE loss without regularization
         err_list = []         # MSE

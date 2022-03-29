@@ -1,4 +1,7 @@
 # visualization and plotting (post processing)
+"""
+TODO extract somewhere for examples, similar to main, maybe some tutorial setup like via jupyter notebook (but hard to maintain, not tracked)
+"""
 import matplotlib.pyplot as plt
 from matplotlib import cm
 import pylab

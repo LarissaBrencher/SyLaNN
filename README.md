@@ -4,10 +4,10 @@ Add a description
 
 ## To Do list
 
-- [ ] write docstrings
+- [x] write docstrings
 - [ ] add documentation creation via Sphinx
 - [ ] add examples? (extra folder, tutorial, how to use?)
-- [ ] change md to rst
+- [ ] change md to rst (README, CODE_OF_CONDUCT etc.)
 - [ ] write tests
 - [ ] add setup.py for packaging
 - [ ] add versioneer?

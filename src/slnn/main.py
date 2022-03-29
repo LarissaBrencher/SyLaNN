@@ -1,5 +1,8 @@
-# Larissa Brencher
-# main file for SRNN
+"""
+TODO add documentation (first in general what the main does, then step description)
+TODO main is actually specific example. Extract to examples?
+TODO extact as file/function: generate folder (name, directory etc.), run example
+"""
 
 # packages
 import torch
@@ -11,10 +14,9 @@ from datetime import datetime
 # own imports
 import input_dicts
 import datamanager as dm
-import sr
+import slnn
 
 # postprocessing runs separately by loading the save file of the simulation
-
 
 if __name__ == "__main__":
         # set seed for reproducability
@@ -26,7 +28,7 @@ if __name__ == "__main__":
         # create folders for saving results and plots later
         curr_date = datetime.today().strftime('%Y-%m-%d')
         curr_time = datetime.today().strftime('%H-%M-%S')
-        folder_name = curr_date + '_SRNNsimulation'
+        folder_name = curr_date + '_SLNNsimulation'
         try:
                 os.mkdir(folder_name)
         except OSError:
@@ -50,8 +52,8 @@ if __name__ == "__main__":
         # TODO write helper method to determine number of variables/parameters
         n_params = generatedDatasets_dict['x_dim']
 
-        # create Symbolic Regression (-based) Neural Network (short SRNN)
-        mySRnet = sr.SRNet(n_hiddenLayers=net_dict['n_hidden'], fcts=net_dict['symbolic_layer'], data_dim=n_params)
+        # create Symbolic-Layered Neural Network (short SLNN)
+        mySRnet = slnn.SLNet(n_hiddenLayers=net_dict['n_hidden'], fcts=net_dict['symbolic_layer'], data_dim=n_params)
 
         # training of network with given data (generated or loaded and formatted previously)
         # and save to file in corresponding folder (encoded with date and time when simulation started)
