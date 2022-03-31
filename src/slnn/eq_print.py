@@ -3,7 +3,7 @@ Contains help functions to print out the predicted expression.
 """
 
 import sympy as sym
-import operators as ops
+import mathOperators as ops
 
 def apply_activFcts(W, fcts, n_binary=0):
     """
@@ -13,9 +13,9 @@ def apply_activFcts(W, fcts, n_binary=0):
     :param W: Matrix containing the expressions (already multiplied with the weight matrix)
     :type W: sympy matrix
     :param fcts: Activation functions
-    :type fcts: list[sympy functions]
-    :param n_binary: Number of binary activation functions, i.e. need two inputs, default 0
-    :type n_binary: int
+    :type fcts: list\[sympy functions\]
+    :param n\_binary: Number of binary activation functions, i.e. need two inputs, default 0
+    :type n\_binary: int
 
     :return: Weight matrix to which the activation functions have been applied.
     :rtype: sympy matrix
@@ -67,15 +67,15 @@ def slnn_print(weights, fcts, var_str, threshold=0.01, n_binary=0):
     Help function in order to generate a readable version of the SLNN structure.
 
     :param weights: Weight matrix
-    :type weights: list[numpy array]
+    :type weights: list\[numpy array\]
     :param fcts: Activation functions
-    :type fcts: list[objects]
-    :param var_str: List of variable names.
-    :type var_str: list[char]
+    :type fcts: list\[objects\]
+    :param var\_str: List of variable names.
+    :type var\_str: list\[char\]
     :param threshold: Fixed threshold at which the matrix entries will be set to zero, default 0.01
     :type threshold: float
-    :param n_binary: Number of binary activation functions, i.e. need two inputs, default 0
-    :type n_binary: int
+    :param n\_binary: Number of binary activation functions, i.e. need two inputs, default 0
+    :type n\_binary: int
 
     :return: Expression matrix
     :rtype: sympy matrix
@@ -99,11 +99,11 @@ def network(weights, fcts, var_str, threshold=0.01):
     Generates a readable version of the SLNN structure.
 
     :param weights: Weight matrix
-    :type weights: list[numpy array]
+    :type weights: list\[numpy array\]
     :param fcts: Activation functions
-    :type fcts: list[objects]
-    :param var_str: List of variable names.
-    :type var_str: list[char]
+    :type fcts: list\[objects\]
+    :param var\_str: List of variable names.
+    :type var\_str: list\[char\]
     :param threshold: Fixed threshold at which the matrix entries will be set to zero, default 0.01
     :type threshold: float
 

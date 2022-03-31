@@ -7,7 +7,7 @@ and the definition of the approximated penalty function.
 import numpy as np
 import torch
 import torch.nn as nn
-import operators as ops
+import mathOperators as ops
 import time
 import eq_print
 
@@ -69,8 +69,8 @@ class SymLayer(nn.Module):
         """
         Constructor method
 
-        :param fcts: Activation functions per layer, default ops.default_func
-        :type fcts: list[objects]
+        :param fcts: Activation functions per layer, default ops.default\_func
+        :type fcts: list\[objects\]
         :param in_dim: Dimension of input from layer, default None
         :type in_dim: int
         :param init_W: Pre-defined weight matrix, default None
@@ -146,10 +146,10 @@ class SLNet(nn.Module):
         :param n_hiddenLayers: Number of hidden layers of the SLNN (depth), default 2
         :type n_hiddenLayers: int
         :param fcts: Activation functions per layer, default ops.default_func
-        :type fcts: list[objects]
+        :type fcts: list\[objects\]
         :param init_W: Pre-defined weight matrix, default None
         :type init_W: Tensor
-        :param data_dim: Number/dimension of variables from the given input data, default 1
+        :param data_dim: Number of variables from the given input data, default 1
         :type data_dim: int
         """
         super(SLNet, self).__init__()
@@ -249,8 +249,8 @@ class SLNet(nn.Module):
         :type data: Tensor
         :param target: Corresponding training targets
         :type target: Tensor
-        :param reg_id: Specifies which kind of regularization method is applied
-        :type reg_id: int or None
+        :param reg\_id: Specifies which kind of regularization method is applied
+        :type reg\_id: int or None
 
         :return: Training losses (MSE + regularization loss and only MSE)
         :rtype: Tensor (with one element)
@@ -281,10 +281,10 @@ class SLNet(nn.Module):
         Trains the SLNN with given datasets within set training configurations.
         Allows LBFGS and ADAM as optimizers.
 
-        :param generatedDatasets_dict: Contains the training and testing data
-        :type generatedDatasets_dict: dict
-        :param trainConfig_dict: Contains the specifications for the SLNN training (number of epochs, regularization weight, learning rate, ...)
-        :type trainConfig_dict: dict
+        :param generatedDatasets\_dict: Contains the training and testing data
+        :type generatedDatasets\_dict: dict
+        :param trainConfig\_dict: Contains the specifications for the SLNN training (number of epochs, regularization weight, learning rate, ...)
+        :type trainConfig\_dict: dict
 
         :return: Dictionary with results of the simulation
         :rtype: dict

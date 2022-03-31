@@ -185,7 +185,7 @@ class Exp(BaseFunction):
         """
         Constructor method, inherits from BaseFunction with adjusted norm parameter
         
-        :param norm: Normalizing factor of BaseFunction, default e
+        :param norm: Normalizing factor of BaseFunction, default np.e
         :type norm: int
         """
         super().__init__(norm)
@@ -338,7 +338,7 @@ def count_inputs(fcts):
     Returns the number of inputs according to the count of unary and binary functions.
 
     :param fcts: Activation functions
-    :type fcts: list[objects]
+    :type fcts: list\[objects\]
 
     :return: Number of inputs
     :rtype: int
@@ -357,7 +357,7 @@ def count_binaryFcts(fcts):
     Returns the number of binary functions.
 
     :param fcts: Activation functions
-    :type fcts: list[objects]
+    :type fcts: list\[objects\]
 
     :return: Number of binary functions
     :rtype: int

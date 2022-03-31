@@ -3,14 +3,14 @@ Creates dictionaries which contain the specifics for generating data,
 defining the SLNN's architecture and its training configurations.
 """
 
-import operators as ops
+import mathOperators as ops
 
 def readDictionaries():
     """
     Returns dictionaries which contain the specifics for generating data,
     defining the SLNN's architecture and its training configurations.
 
-    :return: generateData_dict, net_dict, trainConfig_dict
+    :return: generateData\_dict, net\_dict, trainConfig\_dict
     :rtype: dict
     """
     # for generating data

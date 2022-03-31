@@ -26,8 +26,8 @@ class DataManager():
         """
         Returns training and testing datasets by means of given definitions in the given dictionary.
 
-        :param generateData_dict: Dictionary containing the definitions for generating a dataset.
-        :type generateData_dict: dict
+        :param generateData\_dict: Dictionary containing the definitions for generating a dataset.
+        :type generateData\_dict: dict
 
         :return: Returns generated dataset as dictionary.
         :rtype: dict
@@ -73,7 +73,7 @@ class DataManager():
         :param sympyFct: Sympy expression to be converted.
         :type sympyFct: str
         :param vars_list: List of variable names.
-        :type vars_list: list[char]
+        :type vars_list: list\[char\]
 
         :return: Expression which can be interpreted as a lambda function.
         :rtype: str
@@ -86,15 +86,15 @@ class DataManager():
         """
         Saves the results of the computed simulation.
 
-        :param save_file_name: Name of the JSON file in which the results are saved.
-        :type save_file_name: str
-        :param generateData_dict: Dictionary containing the definitions for generating a dataset.
-        :type generateData_dict: dict
-        :param net_dict: Dictionary containing the settings of the Symbolic-Layered Neural Network.
-        :type net_dict: dict
-        :param trainConfig_dict: Dictionary containing the configurations of the network's training.
-        :type trainConfig_dict: dict
-        :param simulationResults_dict: Dictionary containing the computed simulation's results which are to be saved.
+        :param save\_file\_name: Name of the JSON file in which the results are saved.
+        :type save\_file\_name: str
+        :param generateData\_dict: Dictionary containing the definitions for generating a dataset.
+        :type generateData\_dict: dict
+        :param net\_dict: Dictionary containing the settings of the Symbolic-Layered Neural Network.
+        :type net\_dict: dict
+        :param trainConfig\_dict: Dictionary containing the configurations of the network's training.
+        :type trainConfig\_dict: dict
+        :param simulationResults\_dict: Dictionary containing the computed simulation's results which are to be saved.
         """
         net_dict.pop('symbolic_layer') 
         # change sympy function to string (to make it savable for json)
