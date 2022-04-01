@@ -1,61 +1,61 @@
-src.slnn package
+src.SyLaNN package
 ================
 
 Submodules
 ----------
 
-src.slnn.datamanager module
+src.SyLaNN.datamanager module
 ---------------------------
 
-.. automodule:: src.slnn.datamanager
+.. automodule:: src.SyLaNN.datamanager
    :members:
    :undoc-members:
    :show-inheritance:
 
-src.slnn.eq\_print module
+src.SyLaNN.eq\_print module
 -------------------------
 
-.. automodule:: src.slnn.eq_print
+.. automodule:: src.SyLaNN.eq_print
    :members:
    :undoc-members:
    :show-inheritance:
 
-src.slnn.input\_dicts module
+src.SyLaNN.input\_dicts module
 ----------------------------
 
-.. automodule:: src.slnn.input_dicts
+.. automodule:: src.SyLaNN.input_dicts
    :members:
    :undoc-members:
    :show-inheritance:
 
-src.slnn.main module
+src.SyLaNN.main module
 --------------------
 
-.. automodule:: src.slnn.main
+.. automodule:: src.SyLaNN.main
    :members:
    :undoc-members:
    :show-inheritance:
 
-src.slnn.mathOperators module
+src.SyLaNN.mathOperators module
 -----------------------------
 
-.. automodule:: src.slnn.mathOperators
+.. automodule:: src.SyLaNN.mathOperators
    :members:
    :undoc-members:
    :show-inheritance:
 
-src.slnn.postprocessing\_reportExamples module
+src.SyLaNN.postprocessing\_reportExamples module
 ----------------------------------------------
 
-.. automodule:: src.slnn.postprocessing_reportExamples
+.. automodule:: src.SyLaNN.postprocessing_reportExamples
    :members:
    :undoc-members:
    :show-inheritance:
 
-src.slnn.slnn module
+src.SyLaNN.SyLaNN module
 --------------------
 
-.. automodule:: src.slnn.slnn
+.. automodule:: src.SyLaNN.SyLaNN
    :members:
    :undoc-members:
    :show-inheritance:

@@ -7,4 +7,4 @@ Subpackages
 .. toctree::
    :maxdepth: 4
 
-   src.slnn
+   src.SyLaNN

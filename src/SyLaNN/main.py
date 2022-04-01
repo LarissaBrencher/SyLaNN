@@ -12,7 +12,7 @@ from datetime import datetime
 # own imports
 import input_dicts
 import datamanager as dm
-import slnn
+import SyLaNN
 
 # postprocessing runs separately by loading the save file of the simulation
 
@@ -51,11 +51,11 @@ if __name__ == "__main__":
         n_params = generatedDatasets_dict['x_dim']
 
         # create Symbolic-Layered Neural Network (short SLNN)
-        mySRnet = slnn.SLNet(n_hiddenLayers=net_dict['n_hidden'], fcts=net_dict['symbolic_layer'], data_dim=n_params)
+        mySLnet = SyLaNN.SLNet(n_hiddenLayers=net_dict['n_hidden'], fcts=net_dict['symbolic_layer'], data_dim=n_params)
 
         # training of network with given data (generated or loaded and formatted previously)
         # and save to file in corresponding folder (encoded with date and time when simulation started)
-        simulationResults_dict = mySRnet.train(generatedDatasets_dict, trainConfig_dict)
+        simulationResults_dict = mySLnet.train(generatedDatasets_dict, trainConfig_dict)
         # TODO needs changes if we have a dataset given and do not need the generating dict
         file_name = generateData_dict['saveFile_name']
         save_file_name = save_folder_path + curr_time + file_name

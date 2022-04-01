@@ -1,2 +1,3 @@
 include versioneer.py
 include src/slnn/_version.py
+include src/SyLaNN/_version.py

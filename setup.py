@@ -6,13 +6,13 @@ import versioneer
 #     long_description = fh.read()
 
 setup(
-    name="slnn",
+    name="SyLaNN",
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
     author="Larissa Brencher",
     # long_description=long_description,
     # long_description_content_type="text/markdown",
-    url="https://github.com/LarissaBrencher/SLNN/",
+    url="https://github.com/LarissaBrencher/SyLaNN/",
     package_dir={"": "src"},
     packages=setuptools.find_packages(where="src"),
     python_requires=">=3.8",
