@@ -1,2 +1,1 @@
-src/slnn/_version.py export-subst
 src/SyLaNN/_version.py export-subst
