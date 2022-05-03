@@ -320,7 +320,6 @@ class SLNet(nn.Module):
                 for epo in range(n_epochs1):
                     reg_id = trainConfig_dict['loop1Reg']
                     train_loss, MSE_plot = self.trainLBFGS_iteration(optimizer, data, target, reg_id)
-
                     train_loss_onlyMSE_val = MSE_plot.item()
                     train_loss_val = train_loss.item()
                     train_loss_onlyMSE_list.append(train_loss_onlyMSE_val)
@@ -340,7 +339,6 @@ class SLNet(nn.Module):
                 for epo in range(n_epochs1, n_epochs2):
                     reg_id = trainConfig_dict['loop2Reg']
                     train_loss, MSE_plot = self.trainLBFGS_iteration(optimizer, data, target, reg_id)
-
                     train_loss_onlyMSE_val = MSE_plot.item()
                     train_loss_val = train_loss.item()
                     train_loss_onlyMSE_list.append(train_loss_onlyMSE_val)
@@ -360,7 +358,6 @@ class SLNet(nn.Module):
                 for epo in range(n_epochs2, n_epochs3+1):
                     reg_id = trainConfig_dict['loop3Reg']
                     train_loss, MSE_plot = self.trainLBFGS_iteration(optimizer, data, target, reg_id)
-
                     train_loss_onlyMSE_val = MSE_plot.item()
                     train_loss_val = train_loss.item()
                     train_loss_onlyMSE_list.append(train_loss_onlyMSE_val)

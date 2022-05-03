@@ -15,7 +15,7 @@ def readDictionaries():
     """
     # for generating data
     # 16-08-21: currently using LBFGS optimizer always so no need to include in json name
-    exNum = 7 # numbering for 1 to 7 (examples in research project 2020-2022)
+    exNum = 1 # numbering for 1 to 7 (examples in research project 2020-2022)
 
     # 'lambda x : x + 8' # standard linear funtion to start with
     # 'lambda x : x**2 + 3*x - 7' # second degree polynomial
@@ -32,7 +32,7 @@ def readDictionaries():
         'n_test' : 1000,
         'domain_train' : [-1, 1],
         'domain_test' : [-2, 2],
-        'ref_fct_str' : 'lambda x : torch.exp(x) - x - 3',
+        'ref_fct_str' : 'lambda x : x + 8',
         'saveFile_name' : "_ex" + str(exNum) + ".json"
     }
 
