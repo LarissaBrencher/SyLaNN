@@ -60,13 +60,14 @@ def readDictionaries():
     trainConfig_dict = {
         'variables_str' : ['x', 'y', 'z'],
         'loop1Reg' : None, # warm-up phase
-        'loop2Reg' : 12,
-        'loop3Reg' : 12,
-        'learning_rate' : 0.05,
+        'loop2Reg' : 'L12approx',
+        'loop3Reg' : 'L12approx',
+        'regApprox_threshold': 0.01,
+        'learning_rate' : 0.01,
         'regularization_weight' : 0.001,
         'trainEpochs1' : 5,
         'trainEpochs2' : 20,
-        'trainEpochs3' : 50,
+        'trainEpochs3' : 80,
         'optimizer' : 'LBFGS'
     }
 

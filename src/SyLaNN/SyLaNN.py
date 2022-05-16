@@ -10,54 +10,7 @@ import torch.nn as nn
 import mathOperators as ops
 import time
 import eq_print
-
-# TODO extract penalty function into separate file
-class L12Smooth(nn.Module):
-    """
-    A class for the approximated penalty function which inherits from the PyTorch nn.Module.
-    """
-    def __init__(self):
-        """
-        Constructor method
-        """
-        super(L12Smooth, self).__init__()
-
-    def forward(self, input_tensor, a=0.01):
-        """
-        Returns the result of applying the penalty function to the input tensor with a
-        fixed threshold (for the approximation).
-
-        :param input\_tensor: Predicted weight matrix to be evaluated via smooth penalty function
-        :type input\_tensor: Tensor
-        :param a: Threshold for the approximation
-        :type a: float
-
-        :return: Penalized prediction
-        :rtype: Tensor
-        """
-        return l12_smooth(input_tensor, a)
-
-
-def l12_smooth(input_tensor, a=0.01):
-    """
-    Penalty function which uses a smooth, approximated version of the Lp-norm with p=0.5.
-
-    :param input\_tensor: Predicted weight matrix to be evaluated via smooth penalty function
-    :type input\_tensor: Tensor
-    :param a: Threshold for the approximation
-    :type a: float
-
-    :return: Penalized prediction
-    :rtype: Tensor
-    """
-    if type(input_tensor) == list:
-        return sum([l12_smooth(tensor) for tensor in input_tensor])
-
-    smooth_abs = torch.where(torch.abs(input_tensor) < a,
-                torch.pow(input_tensor, 4) / (-8 * a ** 3) + torch.square(input_tensor) * 3 / 4 / a + 3 * a / 8,
-                torch.abs(input_tensor))
-
-    return torch.sum(torch.sqrt(smooth_abs))
+from penalty import Penalty
 
 
 class SymLayer(nn.Module):
@@ -194,52 +147,28 @@ class SLNet(nn.Module):
         return [self.hidden_layers[i].get_weight_tensor() for i in range(self.depth)] + \
                [self.output_weight.clone()]
 
-    def reg_term(self, W, lmb, regID):
+    def reg_term(self, regObj, W, lmb, eps=0.001):
         """
         Returns the regularization term depending on which type of regulariztion is chosen.
 
+        :param regObj: Object of penalty class, defined via string in input dictionary
+        :type regObj: Penalty object
         :param W: Weight matrix
         :type W: Tensor
         :param lmb: Regularization weight
         :type lmb: float
-        :param regID: Specifies which kind of regularization method is applied
-        :type regID: int or None
+        :param eps: Threshold for the approximation options, default 0.001
+        :type eps: float
         """
-        if regID is None:
-            reg_val = 0
-            return lmb * torch.tensor([reg_val])
-        elif regID == 0:
-            reg_val = 0
-            for W_i in W:
-                penalty = torch.count_nonzero(torch.abs(W_i))
-                reg_val += penalty
-            return lmb * torch.tensor([reg_val])
-        elif regID == 1:
-            reg_val = 0
-            for W_i in W:
-                penalty = torch.sum(torch.abs(W_i))
-                reg_val += penalty
-            return lmb * torch.tensor([reg_val])
-        elif regID == 2:
-            reg_val = 0
-            for W_i in W:
-                penalty = torch.sum(torch.square(W_i))
-                reg_val += penalty
-            return lmb * torch.tensor([reg_val])
-        elif regID == 12:
-            penalty = L12Smooth()
-            reg_val = penalty(W)
-            return lmb * reg_val
-        else:
-            raise ValueError("Wrong value chosen for regularizarion loss (possible values: None, 0, 1, 2). \n Please re-evaluate the dictionary for training the Symbolic-Layered Neural Network.")
-
+        return regObj(W, lmb, eps)
+    
     def loss(self):
         """
         Returns the loss value (in this case the mean-squared error is chosen).
         """
         return nn.MSELoss()
 
-    def trainLBFGS_iteration(self, optimizer, data, target, reg_id):
+    def trainLBFGS_iteration(self, optimizer, data, target, regObj):
         """
         Performs a single optimization step (LBFGS). Returns the training error (MSE).
 
@@ -250,7 +179,7 @@ class SLNet(nn.Module):
         :param target: Corresponding training targets
         :type target: Tensor
         :param reg\_id: Specifies which kind of regularization method is applied
-        :type reg\_id: int or None
+        :type reg\_id: string
 
         :return: Training losses (MSE + regularization loss and only MSE)
         :rtype: Tensor (with one element)
@@ -265,7 +194,7 @@ class SLNet(nn.Module):
             optimizer.zero_grad()
             output = self(data)
             MSE_loss = criterion(output, target)
-            reg_loss = self.reg_term(self.get_weights_tensor(), self.lmb_reg, reg_id)
+            reg_loss = self.reg_term(regObj, self.get_weights_tensor(), self.lmb_reg, self.approx_eps)
             loss = MSE_loss + reg_loss
             loss.backward()
             return loss
@@ -298,6 +227,7 @@ class SLNet(nn.Module):
         n_epochs2 = int(trainConfig_dict['trainEpochs2']) # int((19 / 20) * epochs)
         n_epochs3 = int(trainConfig_dict['trainEpochs3']) # int(epochs+1)
         self.lmb_reg = trainConfig_dict['regularization_weight'] # regularization weight
+        self.approx_eps = trainConfig_dict['regApprox_threshold'] # penalty approximation threshold
 
         err_test_final = []
         found_eq = []
@@ -310,6 +240,13 @@ class SLNet(nn.Module):
 
         self.learning_rate = trainConfig_dict['learning_rate'] # 0.001 # see Martius 2016
 
+        reg_id1 = trainConfig_dict['loop1Reg']
+        regObj1 = Penalty(name=reg_id1)
+        reg_id2 = trainConfig_dict['loop2Reg']
+        regObj2 = Penalty(name=reg_id2)
+        reg_id3 = trainConfig_dict['loop3Reg']
+        regObj3 = Penalty(name=reg_id3)
+
         # measure computational time --- start
         t0 = time.time()
 
@@ -318,8 +255,7 @@ class SLNet(nn.Module):
                 optimizer = torch.optim.LBFGS(self.parameters(), lr=self.learning_rate)
 
                 for epo in range(n_epochs1):
-                    reg_id = trainConfig_dict['loop1Reg']
-                    train_loss, MSE_plot = self.trainLBFGS_iteration(optimizer, data, target, reg_id)
+                    train_loss, MSE_plot = self.trainLBFGS_iteration(optimizer, data, target, regObj1)
                     train_loss_onlyMSE_val = MSE_plot.item()
                     train_loss_val = train_loss.item()
                     train_loss_onlyMSE_list.append(train_loss_onlyMSE_val)
@@ -337,8 +273,7 @@ class SLNet(nn.Module):
                         break
 
                 for epo in range(n_epochs1, n_epochs2):
-                    reg_id = trainConfig_dict['loop2Reg']
-                    train_loss, MSE_plot = self.trainLBFGS_iteration(optimizer, data, target, reg_id)
+                    train_loss, MSE_plot = self.trainLBFGS_iteration(optimizer, data, target, regObj2)
                     train_loss_onlyMSE_val = MSE_plot.item()
                     train_loss_val = train_loss.item()
                     train_loss_onlyMSE_list.append(train_loss_onlyMSE_val)
@@ -356,8 +291,7 @@ class SLNet(nn.Module):
                         break
 
                 for epo in range(n_epochs2, n_epochs3+1):
-                    reg_id = trainConfig_dict['loop3Reg']
-                    train_loss, MSE_plot = self.trainLBFGS_iteration(optimizer, data, target, reg_id)
+                    train_loss, MSE_plot = self.trainLBFGS_iteration(optimizer, data, target, regObj3)
                     train_loss_onlyMSE_val = MSE_plot.item()
                     train_loss_val = train_loss.item()
                     train_loss_onlyMSE_list.append(train_loss_onlyMSE_val)
@@ -379,6 +313,7 @@ class SLNet(nn.Module):
             while np.isnan(train_loss_val):
                 # use Adam optimizer see Martius
                 optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
+                regObj = reg.Penalty(reg_id)
 
                 # first training part
                 for epo in range(n_epochs1):
@@ -388,7 +323,7 @@ class SLNet(nn.Module):
                     outputs = self(data)
                     criterion = self.loss()
                     MSE_loss = criterion(outputs, target)
-                    reg_loss = self.reg_term(self.get_weights_tensor(), self.lmb_reg, reg_id)
+                    reg_loss = self.reg_term(regObj, self.get_weights_tensor(), self.lmb_reg, self.approx_eps)
                     train_loss = MSE_loss + reg_loss
                     train_loss.backward()
                     optimizer.step()
@@ -416,7 +351,7 @@ class SLNet(nn.Module):
                     outputs = self(data) # forward pass
                     criterion = self.loss()
                     MSE_loss = criterion(outputs, target)
-                    reg_loss = self.reg_term(self.get_weights_tensor(), self.lmb_reg, reg_id)
+                    reg_loss = self.reg_term(regObj, self.get_weights_tensor(), self.lmb_reg, self.approx_eps)
                     train_loss = MSE_loss + reg_loss
                     train_loss.backward()
                     optimizer.step()
@@ -444,7 +379,7 @@ class SLNet(nn.Module):
                     outputs = self(data) # forward pass
                     criterion = self.loss()
                     MSE_loss = criterion(outputs, target)
-                    reg_loss = self.reg_term(self.get_weights_tensor(), self.lmb_reg, reg_id)  # or get_weights() or self.get_weights_tensor()?
+                    reg_loss = self.reg_term(regObj, self.get_weights_tensor(), self.lmb_reg, self.approx_eps)
                     train_loss = MSE_loss + reg_loss
                     train_loss.backward()
                     optimizer.step()
