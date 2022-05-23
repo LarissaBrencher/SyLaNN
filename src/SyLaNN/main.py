@@ -55,7 +55,8 @@ if __name__ == "__main__":
 
         # training of network with given data (generated or loaded and formatted previously)
         # and save to file in corresponding folder (encoded with date and time when simulation started)
-        simulationResults_dict = mySLnet.train(generatedDatasets_dict, trainConfig_dict)
+        gamma_miniTest = 0.5
+        simulationResults_dict = mySLnet.train(generatedDatasets_dict, trainConfig_dict, gamma_miniTest)
         # print(mySLnet.get_weights_tensor())
         # TODO needs changes if we have a dataset given and do not need the generating dict
         file_name = generateData_dict['saveFile_name']

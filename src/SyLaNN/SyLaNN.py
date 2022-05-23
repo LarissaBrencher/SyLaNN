@@ -146,21 +146,6 @@ class SLNet(nn.Module):
         """
         return [self.hidden_layers[i].get_weight_tensor() for i in range(self.depth)] + \
                [self.output_weight.clone()]
-
-    def reg_term(self, regObj, W, lmb, eps=0.001):
-        """
-        Returns the regularization term depending on which type of regulariztion is chosen.
-
-        :param regObj: Object of penalty class, defined via string in input dictionary
-        :type regObj: Penalty object
-        :param W: Weight matrix
-        :type W: Tensor
-        :param lmb: Regularization weight
-        :type lmb: float
-        :param eps: Threshold for the approximation options, default 0.001
-        :type eps: float
-        """
-        return regObj(W, lmb, eps)
     
     def loss(self):
         """
@@ -168,7 +153,7 @@ class SLNet(nn.Module):
         """
         return nn.MSELoss()
 
-    def trainLBFGS_iteration(self, optimizer, data, target, regObj):
+    def trainLBFGS_iteration(self, optimizer, data, target, regObj, gamma_idx):
         """
         Performs a single optimization step (LBFGS). Returns the training error (MSE).
 
@@ -194,7 +179,7 @@ class SLNet(nn.Module):
             optimizer.zero_grad()
             output = self(data)
             MSE_loss = criterion(output, target)
-            reg_loss = self.reg_term(regObj, self.get_weights_tensor(), self.lmb_reg, self.approx_eps)
+            reg_loss = regObj(self.get_weights_tensor(), self.lmb_reg, self.approx_eps, gamma_idx)
             loss = MSE_loss + reg_loss
             loss.backward()
             return loss
@@ -205,7 +190,7 @@ class SLNet(nn.Module):
 
         return train_loss, MSE_loss_plot
 
-    def train(self, generatedDatasets_dict, trainConfig_dict):
+    def train(self, generatedDatasets_dict, trainConfig_dict, gamma_idx=0.5):
         """
         Trains the SLNN with given datasets within set training configurations.
         Allows LBFGS and ADAM as optimizers.
@@ -255,7 +240,7 @@ class SLNet(nn.Module):
                 optimizer = torch.optim.LBFGS(self.parameters(), lr=self.learning_rate)
 
                 for epo in range(n_epochs1):
-                    train_loss, MSE_plot = self.trainLBFGS_iteration(optimizer, data, target, regObj1)
+                    train_loss, MSE_plot = self.trainLBFGS_iteration(optimizer, data, target, regObj1, gamma_idx)
                     train_loss_onlyMSE_val = MSE_plot.item()
                     train_loss_val = train_loss.item()
                     train_loss_onlyMSE_list.append(train_loss_onlyMSE_val)
@@ -273,7 +258,7 @@ class SLNet(nn.Module):
                         break
 
                 for epo in range(n_epochs1, n_epochs2):
-                    train_loss, MSE_plot = self.trainLBFGS_iteration(optimizer, data, target, regObj2)
+                    train_loss, MSE_plot = self.trainLBFGS_iteration(optimizer, data, target, regObj2, gamma_idx)
                     train_loss_onlyMSE_val = MSE_plot.item()
                     train_loss_val = train_loss.item()
                     train_loss_onlyMSE_list.append(train_loss_onlyMSE_val)
@@ -291,7 +276,7 @@ class SLNet(nn.Module):
                         break
 
                 for epo in range(n_epochs2, n_epochs3+1):
-                    train_loss, MSE_plot = self.trainLBFGS_iteration(optimizer, data, target, regObj3)
+                    train_loss, MSE_plot = self.trainLBFGS_iteration(optimizer, data, target, regObj3, gamma_idx)
                     train_loss_onlyMSE_val = MSE_plot.item()
                     train_loss_val = train_loss.item()
                     train_loss_onlyMSE_list.append(train_loss_onlyMSE_val)

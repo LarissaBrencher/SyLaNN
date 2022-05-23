@@ -60,8 +60,8 @@ def readDictionaries():
     trainConfig_dict = {
         'variables_str' : ['x', 'y', 'z'],
         'loop1Reg' : None, # warm-up phase
-        'loop2Reg' : 'L12approx',
-        'loop3Reg' : 'L12approx',
+        'loop2Reg' : 'ElasticNetapprox', # 'L12approx',
+        'loop3Reg' : 'ElasticNetapprox', # 'L12approx',
         'regApprox_threshold': 0.01,
         'learning_rate' : 0.01,
         'regularization_weight' : 0.001,

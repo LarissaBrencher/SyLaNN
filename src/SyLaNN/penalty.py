@@ -21,7 +21,7 @@ class Penalty(nn.Module):
 
         self.name = name
 
-    def forward(self, input_tensor, lmb=0.001, eps=0.001):
+    def forward(self, input_tensor, lmb=0.001, eps=0.001, gamma=0.5):
         """
         Returns the result of applying the penalty function to the input tensor with a
         fixed threshold (for approximations).
@@ -32,6 +32,8 @@ class Penalty(nn.Module):
         :type lmb: float
         :param eps: Threshold for the approximation, default 0.001
         :type eps: float
+        :param gamma: L1 ratio of elastic net penalty, default 0.5
+        :type gamma: float
 
         :return: Penalized prediction
         :rtype: Tensor
@@ -59,7 +61,7 @@ class Penalty(nn.Module):
         elif self.name.__eq__('L12approx'):
             return lmb * L12_approx(input_tensor, eps)
         elif self.name.__eq__('ElasticNetapprox'):
-            return lmb * elasticnet_approx(input_tensor, eps)
+            return lmb * elasticnet_approx(input_tensor, eps, gamma)
         else:
             raise ValueError("Wrong value chosen for regularizarion loss. \n Please re-evaluate the dictionary for training the Symbolic-Layered Neural Network.")
 
@@ -86,9 +88,9 @@ def L12_approx(input_tensor, eps=0.001):
     approx = torch.sqrt(torch.sqrt(input_squared + eps**2)) - eps**(1/2) # torch.sqrt(torch.sqrt(input_squared - eps**2))
     return torch.sum(approx)
 
-def elasticnet_approx(input_tensor, eps=0.001):
+def elasticnet_approx(input_tensor, eps=0.001, l1ratio=0.5):
     if type(input_tensor) == list:
         return sum([elasticnet_approx(tensor, eps) for tensor in input_tensor])
     L1part = L1_approx(input_tensor, eps)
     L2part = torch.sum(torch.square(input_tensor))
-    return L1part + L2part # TODO add gamma
+    return l1ratio * L1part + (1-l1ratio) * L2part
