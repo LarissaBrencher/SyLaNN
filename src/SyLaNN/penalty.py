@@ -12,11 +12,12 @@ class Penalty(nn.Module):
     def __init__(self, name=None):
         """
         Constructor method
+        (Possible choices for penalty name: None, 'L0', 'L1', 'L1approx', 'L12approx', 'L2', 'ElasticNetapprox')
 
         :param name: Name of the chosen penalty function
         :type name: string
         """
-        # TODO add possiblities as example to documentation
+
         super(Penalty, self).__init__()
 
         self.name = name
@@ -65,11 +66,61 @@ class Penalty(nn.Module):
         else:
             raise ValueError("Wrong value chosen for regularizarion loss. \n Please re-evaluate the dictionary for training the Symbolic-Layered Neural Network.")
 
-    def calculate_jacobian(self, weights):
-        pass
+    def calculate_jacobian(self, weights, eps=0.001):
+        if self.name is None:
+            raise ValueError("No regularization is chosen. Consequently, the Jacobian cannot be computed.")
+        elif self.name.__eq__('L0'):
+            raise ValueError("L0 regularization is chosen. Due to the non-differentiability the Jacobian cannot be computed.")
+        elif self.name.__eq__('L1'):
+            raise ValueError("L1 regularization is chosen. Due to the non-differentiability the Jacobian cannot be computed. If L1 with BR optimization is desired, please choose the L1 approximation.")
+        elif self.name.__eq__('L2'):
+            pass
+        elif self.name.__eq__('L1approx'):
+            pass
+        elif self.name.__eq__('L12approx'):
+            pass
+        elif self.name.__eq__('ElasticNetapprox'):
+            pass
+        else:
+            raise ValueError("Wrong value chosen for regularizarion loss. \n Please re-evaluate the dictionary for training the Symbolic-Layered Neural Network.")
 
-    def calculate_hessian(self, weights):
-        pass
+    def calculate_hessian(self, input_tensor, eps=0.001, gamma=None):
+        weights = torch.nn.utils.parameters_to_vector(input_tensor) # or maybe use parameter to vector implementation?
+        # print(len(weights))
+        hessian = torch.zeros(len(weights))
+        if self.name is None:
+            # just define as zero?
+            return [0]
+            # raise ValueError("No regularization is chosen. Consequently, the Hessian cannot be computed.")
+        elif self.name.__eq__('L0'):
+            raise ValueError("L0 regularization is chosen. Due to the non-differentiability the Hessian cannot be computed.")
+        elif self.name.__eq__('L1'):
+            raise ValueError("L1 regularization is chosen. Due to the non-differentiability the Hessian cannot be computed. If L1 with BR optimization is desired, please choose the L1 approximation.")
+        elif self.name.__eq__('L2'):
+            # TODO just create torch.eye of corresponding size, less computational time
+            for idx, W_i in enumerate(weights):
+                h_value = 2
+                hessian[idx] = h_value
+            return torch.diag(hessian)
+        elif self.name.__eq__('L1approx'):
+            for idx, W_i in enumerate(weights):
+                h_value = eps**2 / ((torch.square(W_i) + eps**2)**(3/2))
+                hessian[idx] = h_value
+            return torch.diag(hessian)
+        elif self.name.__eq__('L12approx'):
+            for idx, W_i in enumerate(weights):
+                h_value = (2*eps**2 - W_i**2) / (4*(torch.square(W_i) + eps**2)**(7/4))
+                hessian[idx] = h_value
+            return torch.diag(hessian)
+        elif self.name.__eq__('ElasticNetapprox'):
+            for idx, W_i in enumerate(weights):
+                h_value_l1 = gamma*eps**2 / ((torch.square(W_i) + eps**2)**(3/2))
+                h_value_l2 = (1-gamma)*2
+                h_value = h_value_l1 + h_value_l2
+                hessian[idx] = h_value
+            return torch.diag(hessian)
+        else:
+            raise ValueError("Wrong value chosen for regularizarion loss. \n Please re-evaluate the dictionary for training the Symbolic-Layered Neural Network.")
 
 
 def L1_approx(input_tensor, eps=0.001):

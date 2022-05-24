@@ -187,6 +187,10 @@ class SLNet(nn.Module):
         train_loss = optimizer.step(closure)
         output_plot = self(data)
         MSE_loss_plot = criterion(output_plot, target)
+        # print(self.get_weights_tensor()[3].numel()) # 0, 1, 2 index for 
+
+        hessian_penalty = regObj.calculate_hessian(self.get_weights_tensor(), self.approx_eps, gamma_idx)
+        # print(hessian_test)
 
         return train_loss, MSE_loss_plot
 
