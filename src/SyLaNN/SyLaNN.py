@@ -153,6 +153,58 @@ class SLNet(nn.Module):
         """
         return nn.MSELoss()
 
+    def loss_jacobian(self, loss):
+        """
+        Returns the Jacobian matrix of the loss with respect to weights.
+
+        :param weights: Parameters, i.e. weights, of the neural network
+        :type weights: Tensor
+        :param loss: Error loss of the prediction compared to the reference solution (without penalty)
+        :type loss: Tensor
+
+        :return: Jacobian matrix
+        :rtype: Tensor
+        """
+        n_samples = loss.size(dim=0)
+        jacobian = []
+        for sample_i in range(n_samples):
+            grad_tmp = torch.autograd.grad(loss[sample_i], self.parameters(), retain_graph=True)
+            grad_tmp = torch.nn.utils.parameters_to_vector(grad_tmp)
+            jacobian.append(grad_tmp)
+        jacobian = torch.stack(jacobian) # stack all rows to get matrix form
+        return jacobian
+
+    def loss_hessian(self, loss):
+        """
+        Returns the Hessian matrix of the loss with respect to weights (Gauss-Newton approximation).
+
+        :param weights: Parameters, i.e. weights, of the neural network
+        :type weights: Tensor
+        :param loss: Error loss of the prediction compared to the reference solution (without penalty)
+        :type loss: Tensor
+
+        :return: Hessian matrix approximation, i.e., multiply transpose Jacobian with Jacobian
+        :rtype: Tensor
+        """
+        jacobian = self.loss_jacobian(loss) # size: numSamples x numWeights
+        jacobian_T = torch.transpose(jacobian, 0, 1) # size: numWeights x numSamples
+        # calculate Hessian matrix approximation by multiplying J^T * J
+        hessian_approx = torch.matmul(jacobian_T, jacobian) # size: numWeights x numWeights
+        return hessian_approx
+
+    def trace_Hinv(self, hessian):
+        """
+        Returns the trace of the inverse Hessian matrix (loss with respect to weights, Gauss-Newton approximation)
+        for Bayesian regularization hyperparameter optimization.
+
+        :param hessian: Hessian matrix
+        :type hessian: Tensor
+
+        :return: Trace of the inverse Hessian matrix
+        :rtype: Tensor
+        """
+        return torch.trace(torch.linalg.inv(hessian))
+
     def trainLBFGS_iteration(self, optimizer, data, target, regObj, gamma_idx):
         """
         Performs a single optimization step (LBFGS). Returns the training error (MSE).
@@ -187,10 +239,15 @@ class SLNet(nn.Module):
         train_loss = optimizer.step(closure)
         output_plot = self(data)
         MSE_loss_plot = criterion(output_plot, target)
-        # print(self.get_weights_tensor()[3].numel()) # 0, 1, 2 index for 
 
-        hessian_penalty = regObj.calculate_hessian(self.get_weights_tensor(), self.approx_eps, gamma_idx)
-        # print(hessian_test)
+        # squared_loss = (self(data) - target).pow(2)
+        # hessian_MSE = self.loss_hessian(squared_loss)
+        # Hessian inverse: do we need some normalization factor? Quite large numbers
+        # TODO what to do when Hessian is singular, non-invertible
+        # print(self.trace_Hinv(hessian_MSE))
+
+        # TODO add alpha, beta
+        # hessian_penalty = regObj.calculate_hessian(self.get_weights_tensor(), self.approx_eps, gamma_idx)
 
         return train_loss, MSE_loss_plot
 
@@ -302,7 +359,7 @@ class SLNet(nn.Module):
             while np.isnan(train_loss_val):
                 # use Adam optimizer see Martius
                 optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
-                regObj = reg.Penalty(reg_id)
+                regObj = Penalty(reg_id)
 
                 # first training part
                 for epo in range(n_epochs1):

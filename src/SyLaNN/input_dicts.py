@@ -59,7 +59,7 @@ def readDictionaries():
     # LBFGS vs Adam: 50,100, then 100:100:1000, then 1000,5000,10000,15000
     trainConfig_dict = {
         'variables_str' : ['x', 'y', 'z'],
-        'loop1Reg' : None, # warm-up phase
+        'loop1Reg' : 'ElasticNetapprox', # None, # warm-up phase
         'loop2Reg' : 'ElasticNetapprox', # 'L12approx',
         'loop3Reg' : 'ElasticNetapprox', # 'L12approx',
         'regApprox_threshold': 0.01,
