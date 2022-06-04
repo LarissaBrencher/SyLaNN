@@ -68,7 +68,10 @@ def readDictionaries():
         'trainEpochs1' : 5,
         'trainEpochs2' : 20,
         'trainEpochs3' : 80,
-        'optimizer' : 'LBFGS'
+        'optimizer' : 'LBFGS',
+        'chooseBR' : True, # choose whether Bayesian regularization is desired during training
+        'error_data_factor' : 1, # choose initial value of 
+        'error_reg_factor' : 1
     }
 
     return generateData_dict, net_dict, trainConfig_dict
