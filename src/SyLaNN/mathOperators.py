@@ -1,5 +1,5 @@
 """
-Defines the SLNN's operator nodes which are applied to each neuron in each custom layer.
+Defines the SyLaNN's operator nodes which are applied to each neuron in each custom layer.
 """
 
 import torch
@@ -22,7 +22,7 @@ class BaseFunction:
         """
         No conversion needed for SymPy.
         
-        :param x: Input within SLNN's custom layer (previous to the application of operators)
+        :param x: Input within SyLaNN's custom layer (previous to the application of operators)
         :type x: Tensor
         """
         return None
@@ -31,7 +31,7 @@ class BaseFunction:
         """
         No conversion needed for PyTorch.
         
-        :param x: Input within SLNN's custom layer (previous to the application of operators)
+        :param x: Input within SyLaNN's custom layer (previous to the application of operators)
         :type x: Tensor
         """
         return None
@@ -40,7 +40,7 @@ class BaseFunction:
         """
         Converts SymPy to NumPy
         
-        :param x: Input within SLNN's custom layer (previous to the application of operators)
+        :param x: Input within SyLaNN's custom layer (previous to the application of operators)
         :type x: Tensor
 
         :return: Callable NumPy function
@@ -59,7 +59,7 @@ class Constant(BaseFunction):
         """
         Returns a tensor filled with scalar ones in the same size as the given input.
 
-        :param x: Input within SLNN's custom layer (previous to the application of operators)
+        :param x: Input within SyLaNN's custom layer (previous to the application of operators)
         :type x: Tensor
 
         :return: Ones-filled tensor with input's shape
@@ -71,7 +71,7 @@ class Constant(BaseFunction):
         """
         Returns scalar 1.
 
-        :param x: Input within SLNN's custom layer (previous to the application of operators)
+        :param x: Input within SyLaNN's custom layer (previous to the application of operators)
         :type x: Tensor
 
         :return: The number one as scalar value
@@ -83,7 +83,7 @@ class Constant(BaseFunction):
         """
         Returns a NumPy array filled with scalar ones in the same size as the given input.
 
-        :param x: Input within SLNN's custom layer (previous to the application of operators)
+        :param x: Input within SyLaNN's custom layer (previous to the application of operators)
         :type x: NumPy array
 
         :return: Ones-filled matrix with input's shape
@@ -101,7 +101,7 @@ class Identity(BaseFunction):
         """
         Returns a tensor (identity function applied to its entries).
 
-        :param x: Input within SLNN's custom layer (previous to the application of operators)
+        :param x: Input within SyLaNN's custom layer (previous to the application of operators)
         :type x: Tensor
 
         :return: Resulting tensor after the identity function has been applied to its entries.
@@ -113,7 +113,7 @@ class Identity(BaseFunction):
         """
         Returns a tensor (identity function applied to its entries).
 
-        :param x: Input within SLNN's custom layer (previous to the application of operators)
+        :param x: Input within SyLaNN's custom layer (previous to the application of operators)
         :type x: Tensor
 
         :return: Resulting tensor after the identity function has been applied to its entries.
@@ -125,7 +125,7 @@ class Identity(BaseFunction):
         """
         Returns a NumPy array (identity function applied to its entries).
 
-        :param x: Input within SLNN's custom layer (previous to the application of operators)
+        :param x: Input within SyLaNN's custom layer (previous to the application of operators)
         :type x: Tensor
 
         :return: Resulting array after the identity function has been applied to its entries.
@@ -143,7 +143,7 @@ class Square(BaseFunction):
         """
         Returns a tensor (square function applied to its entries).
 
-        :param x: Input within SLNN's custom layer (previous to the application of operators)
+        :param x: Input within SyLaNN's custom layer (previous to the application of operators)
         :type x: Tensor
 
         :return: Resulting tensor after the square function has been applied to its entries.
@@ -155,7 +155,7 @@ class Square(BaseFunction):
         """
         Returns a tensor (square function applied to its entries).
 
-        :param x: Input within SLNN's custom layer (previous to the application of operators)
+        :param x: Input within SyLaNN's custom layer (previous to the application of operators)
         :type x: Tensor
 
         :return: Resulting tensor after the square function has been applied to its entries.
@@ -167,7 +167,7 @@ class Square(BaseFunction):
         """
         Returns the element-wise square of the given input.
 
-        :param x: Input within SLNN's custom layer (previous to the application of operators)
+        :param x: Input within SyLaNN's custom layer (previous to the application of operators)
         :type x: Tensor
 
         :return: Resulting tensor after the square function has been applied to its entries.
@@ -194,7 +194,7 @@ class Exp(BaseFunction):
         """
         Returns a tensor (exponential function applied to its entries).
 
-        :param x: Input within SLNN's custom layer (previous to the application of operators)
+        :param x: Input within SyLaNN's custom layer (previous to the application of operators)
         :type x: Tensor
 
         :return: Resulting tensor after the exponential function has been applied to its entries.
@@ -206,7 +206,7 @@ class Exp(BaseFunction):
         """
         Returns a tensor (exponential function applied to its entries).
 
-        :param x: Input within SLNN's custom layer (previous to the application of operators)
+        :param x: Input within SyLaNN's custom layer (previous to the application of operators)
         :type x: Tensor
 
         :return: Resulting tensor after the exponential function has been applied to its entries.
@@ -218,7 +218,7 @@ class Exp(BaseFunction):
         """
         Returns the element-wise exponential of the given input.
 
-        :param x: Input within SLNN's custom layer (previous to the application of operators)
+        :param x: Input within SyLaNN's custom layer (previous to the application of operators)
         :type x: Tensor
 
         :return: Resulting tensor after the exponential function has been applied to its entries.
@@ -242,9 +242,9 @@ class BaseFunction2:
         """
         No conversion needed for SymPy.
         
-        :param x: Input within SLNN's custom layer (previous to the application of operators)
+        :param x: Input within SyLaNN's custom layer (previous to the application of operators)
         :type x: Tensor
-        :param y: Input within SLNN's custom layer (previous to the application of operators)
+        :param y: Input within SyLaNN's custom layer (previous to the application of operators)
         :type y: Tensor
         """
         return None
@@ -253,9 +253,9 @@ class BaseFunction2:
         """
         No conversion needed for PyTorch.
         
-        :param x: Input within SLNN's custom layer (previous to the application of operators)
+        :param x: Input within SyLaNN's custom layer (previous to the application of operators)
         :type x: Tensor
-        :param y: Input within SLNN's custom layer (previous to the application of operators)
+        :param y: Input within SyLaNN's custom layer (previous to the application of operators)
         :type y: Tensor
         """
         return None
@@ -264,9 +264,9 @@ class BaseFunction2:
         """
         Converts SymPy to NumPy
         
-        :param x: Input within SLNN's custom layer (previous to the application of operators)
+        :param x: Input within SyLaNN's custom layer (previous to the application of operators)
         :type x: Tensor
-        :param y: Input within SLNN's custom layer (previous to the application of operators)
+        :param y: Input within SyLaNN's custom layer (previous to the application of operators)
         :type y: Tensor
 
         :return: Callable NumPy function
@@ -294,9 +294,9 @@ class Product(BaseFunction2):
         """
         Returns a tensor which contains the product between both inputs.
 
-        :param x: Input within SLNN's custom layer (previous to the application of operators)
+        :param x: Input within SyLaNN's custom layer (previous to the application of operators)
         :type x: Tensor
-        :param y: Input within SLNN's custom layer (previous to the application of operators)
+        :param y: Input within SyLaNN's custom layer (previous to the application of operators)
         :type y: Tensor
 
         :return: Resulting tensor after the multiplication has been applied.
@@ -308,9 +308,9 @@ class Product(BaseFunction2):
         """
         Returns a tensor which contains the product between both inputs.
 
-        :param x: Input within SLNN's custom layer (previous to the application of operators)
+        :param x: Input within SyLaNN's custom layer (previous to the application of operators)
         :type x: Tensor
-        :param y: Input within SLNN's custom layer (previous to the application of operators)
+        :param y: Input within SyLaNN's custom layer (previous to the application of operators)
         :type y: Tensor
 
         :return: Resulting tensor after the multiplication has been applied.
@@ -322,15 +322,71 @@ class Product(BaseFunction2):
         """
         Returns a NumPy array which contains the product between both inputs.
 
-        :param x: Input within SLNN's custom layer (previous to the application of operators)
+        :param x: Input within SyLaNN's custom layer (previous to the application of operators)
         :type x: NumPy array
-        :param y: Input within SLNN's custom layer (previous to the application of operators)
+        :param y: Input within SyLaNN's custom layer (previous to the application of operators)
         :type y: NumPy array
 
         :return: Resulting tensor after the multiplication has been applied.
         :rtype: NumPy array
         """
         return x * y / self.norm
+
+class Power(BaseFunction2):
+    """
+    A class for the mathematical operator applying the power. The first input is the base, the second one is the exponent.
+    Takes BaseFunction2 as an argument.
+    """
+    def __init__(self, norm=0.1):
+        """
+        Constructor method, inherits from BaseFunction2 with adjusted norm parameter
+        
+        :param norm: Normalizing factor of BaseFunction2, default 0.1
+        :type norm: int
+        """
+        super().__init__(norm=norm)
+
+    def torch(self, x, y):
+        """
+        Returns a tensor which contains the power of two inputs.
+
+        :param x: Input within SyLaNN's custom layer (previous to the application of operators)
+        :type x: Tensor
+        :param y: Input within SyLaNN's custom layer (previous to the application of operators)
+        :type y: Tensor
+
+        :return: Resulting tensor after the power has been applied.
+        :rtype: Tensor
+        """
+        return x ** y / self.norm
+
+    def sp(self, x, y):
+        """
+        Returns a tensor which contains the power of two inputs.
+
+        :param x: Input within SyLaNN's custom layer (previous to the application of operators)
+        :type x: Tensor
+        :param y: Input within SyLaNN's custom layer (previous to the application of operators)
+        :type y: Tensor
+
+        :return: Resulting tensor after the power has been applied.
+        :rtype: Tensor
+        """
+        return x ** y / self.norm
+
+    def np(self, x, y):
+        """
+        Returns a NumPy array which contains the power of two inputs.
+
+        :param x: Input within SyLaNN's custom layer (previous to the application of operators)
+        :type x: NumPy array
+        :param y: Input within SyLaNN's custom layer (previous to the application of operators)
+        :type y: NumPy array
+
+        :return: Resulting tensor after the power has been applied.
+        :rtype: NumPy array
+        """
+        return x ** y / self.norm
 
 
 def count_inputs(fcts):
