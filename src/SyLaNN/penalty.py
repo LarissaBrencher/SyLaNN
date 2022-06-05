@@ -89,9 +89,7 @@ class Penalty(nn.Module):
         # print(len(weights))
         hessian = torch.zeros(len(weights))
         if self.name is None:
-            # just define as zero?
-            return [0]
-            # raise ValueError("No regularization is chosen. Consequently, the Hessian cannot be computed.")
+            return torch.diag(hessian) # hessian only contains zeros, so no effect when no regularization is chosen
         elif self.name.__eq__('L0'):
             raise ValueError("L0 regularization is chosen. Due to the non-differentiability the Hessian cannot be computed.")
         elif self.name.__eq__('L1'):
