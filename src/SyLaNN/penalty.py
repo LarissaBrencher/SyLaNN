@@ -85,8 +85,7 @@ class Penalty(nn.Module):
             raise ValueError("Wrong value chosen for regularizarion loss. \n Please re-evaluate the dictionary for training the Symbolic-Layered Neural Network.")
 
     def calculate_hessian(self, input_tensor, eps=0.001, gamma=None):
-        weights = torch.nn.utils.parameters_to_vector(input_tensor) # or maybe use parameter to vector implementation?
-        # print(len(weights))
+        weights = torch.nn.utils.parameters_to_vector(input_tensor)
         hessian = torch.zeros(len(weights))
         if self.name is None:
             return torch.diag(hessian) # hessian only contains zeros, so no effect when no regularization is chosen
@@ -131,10 +130,8 @@ def L1_approx(input_tensor, eps=0.001):
 def L12_approx(input_tensor, eps=0.001):
     if type(input_tensor) == list:
         return sum([L12_approx(tensor, eps) for tensor in input_tensor])
-    input_squared = torch.square(input_tensor)
-    # alpha = 2
-    # input_tensor * torch.tanh(alpha*input_tensor) 
-    approx = torch.sqrt(torch.sqrt(input_squared + eps**2)) - eps**(1/2) # torch.sqrt(torch.sqrt(input_squared - eps**2))
+    input_squared = torch.square(input_tensor) 
+    approx = torch.sqrt(torch.sqrt(input_squared + eps**2)) - eps**(1/2)
     return torch.sum(approx)
 
 def elasticnet_approx(input_tensor, eps=0.001, l1ratio=0.5):

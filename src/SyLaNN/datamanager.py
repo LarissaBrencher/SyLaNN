@@ -37,12 +37,14 @@ class DataManager():
         # create training data
         range_min_train = generateData_dict['domain_train'][0]
         range_max_train = generateData_dict['domain_train'][1]
-        inputX_train = (range_max_train - range_min_train) * torch.rand([generateData_dict['n_train'], x_dim]) + range_min_train
+        # TODO regular N(0,1) narrow enough?
+        inputX_train = (range_max_train - range_min_train) * torch.randn([generateData_dict['n_train'], x_dim]) + range_min_train
         outputY_train = torch.tensor([[ref_fct(*x_i)] for x_i in inputX_train])
         # create testing data
         range_min_test = generateData_dict['domain_test'][0]
         range_max_test = generateData_dict['domain_test'][1]
-        inputX_test = (range_max_test - range_min_test) * torch.rand([generateData_dict['n_test'], x_dim]) + range_min_test
+        # TODO regular N(0,1) narrow enough?
+        inputX_test = (range_max_test - range_min_test) * torch.randn([generateData_dict['n_test'], x_dim]) + range_min_test
         outputY_test = torch.tensor([[ref_fct(*x_i)] for x_i in inputX_test])
         # write generated data sets into dictionary
         dataset_dict = {
