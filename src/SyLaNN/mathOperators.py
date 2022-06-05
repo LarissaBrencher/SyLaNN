@@ -332,6 +332,7 @@ class Product(BaseFunction2):
         """
         return x * y / self.norm
 
+
 class Power(BaseFunction2):
     """
     A class for the mathematical operator applying the power. The first input is the base, the second one is the exponent.
@@ -387,6 +388,64 @@ class Power(BaseFunction2):
         :rtype: NumPy array
         """
         return x ** y / self.norm
+
+
+# TODO add some assert statements to ensure that y is never zero
+class Quotient(BaseFunction2):
+    """
+    A class for the mathematical operator applying the quotient of two inputs.
+    Takes BaseFunction2 as an argument.
+    """
+    def __init__(self, norm=0.1):
+        """
+        Constructor method, inherits from BaseFunction2 with adjusted norm parameter
+        
+        :param norm: Normalizing factor of BaseFunction2, default 0.1
+        :type norm: int
+        """
+        super().__init__(norm=norm)
+
+    def torch(self, x, y):
+        """
+        Returns a tensor which contains the quotient between both inputs.
+
+        :param x: Input within SyLaNN's custom layer (previous to the application of operators)
+        :type x: Tensor
+        :param y: Input within SyLaNN's custom layer (previous to the application of operators)
+        :type y: Tensor
+
+        :return: Resulting tensor after the division has been applied.
+        :rtype: Tensor
+        """
+        return (x / y) / self.norm
+
+    def sp(self, x, y):
+        """
+        Returns a tensor which contains the quotient between both inputs.
+
+        :param x: Input within SyLaNN's custom layer (previous to the application of operators)
+        :type x: Tensor
+        :param y: Input within SyLaNN's custom layer (previous to the application of operators)
+        :type y: Tensor
+
+        :return: Resulting tensor after the division has been applied.
+        :rtype: Tensor
+        """
+        return (x / y) / self.norm
+
+    def np(self, x, y):
+        """
+        Returns a NumPy array which contains the quotient between both inputs.
+
+        :param x: Input within SyLaNN's custom layer (previous to the application of operators)
+        :type x: NumPy array
+        :param y: Input within SyLaNN's custom layer (previous to the application of operators)
+        :type y: NumPy array
+
+        :return: Resulting tensor after the division has been applied.
+        :rtype: NumPy array
+        """
+        return (x / y) / self.norm
 
 
 def count_inputs(fcts):
