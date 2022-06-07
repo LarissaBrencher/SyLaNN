@@ -16,8 +16,6 @@ def readDictionaries():
     # for generating data
     # 16-08-21: currently using LBFGS optimizer always so no need to include in json name
     # exNum = 1 # numbering for 1 to 7 (examples in research project 2020-2022)
-    # TODO add gamma string somehow
-
     # 'lambda x : x + 8' # standard linear funtion to start with
     # 'lambda x : x**2 + 3*x - 7' # second degree polynomial
     # 'lambda x : x**3 + 2*x**2 - x + 1' # third degree polynomial
@@ -33,7 +31,7 @@ def readDictionaries():
         'n_test' : 1000,
         'domain_train' : [-1, 1],
         'domain_test' : [-2, 2],
-        'ref_fct_str' : 'lambda Kf, Ceq, n : Kf * Ceq ** n',
+        'ref_fct_str' : 'lambda K, C, n : K * C ** n',
         'saveFile_name' : "_FreundlichIsotherm" # "_ex" + str(exNum) + ".json"
     }
 
@@ -60,7 +58,7 @@ def readDictionaries():
     # LBFGS vs Adam: 50,100, then 100:100:1000, then 1000,5000,10000,15000
     # BR's init alpha, beta according to Bayesian regularization paper
     trainConfig_dict = {
-        'variables_str' : ['x', 'y', 'z'],
+        'variables_str' : ['K', 'C', 'n'], # ['x', 'y', 'z'],
         'loop1Reg' : 'ElasticNetapprox', # None, # warm-up phase
         'loop2Reg' : 'ElasticNetapprox', # 'L12approx',
         'loop3Reg' : 'ElasticNetapprox', # 'L12approx',
