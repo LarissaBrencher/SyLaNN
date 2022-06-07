@@ -15,7 +15,8 @@ def readDictionaries():
     """
     # for generating data
     # 16-08-21: currently using LBFGS optimizer always so no need to include in json name
-    exNum = 1 # numbering for 1 to 7 (examples in research project 2020-2022)
+    # exNum = 1 # numbering for 1 to 7 (examples in research project 2020-2022)
+    # TODO add gamma string somehow
 
     # 'lambda x : x + 8' # standard linear funtion to start with
     # 'lambda x : x**2 + 3*x - 7' # second degree polynomial
@@ -32,8 +33,8 @@ def readDictionaries():
         'n_test' : 1000,
         'domain_train' : [-1, 1],
         'domain_test' : [-2, 2],
-        'ref_fct_str' : 'lambda x : x + 8',
-        'saveFile_name' : "_ex" + str(exNum) + ".json"
+        'ref_fct_str' : 'lambda Kf, Ceq, n : Kf * Ceq ** n',
+        'saveFile_name' : "_FreundlichIsotherm" # "_ex" + str(exNum) + ".json"
     }
 
     # for creating the neural network structure
@@ -57,6 +58,7 @@ def readDictionaries():
 
     # for configuring the settings and hyperparameters for the network's training
     # LBFGS vs Adam: 50,100, then 100:100:1000, then 1000,5000,10000,15000
+    # BR's init alpha, beta according to Bayesian regularization paper
     trainConfig_dict = {
         'variables_str' : ['x', 'y', 'z'],
         'loop1Reg' : 'ElasticNetapprox', # None, # warm-up phase
@@ -69,9 +71,9 @@ def readDictionaries():
         'trainEpochs2' : 20,
         'trainEpochs3' : 80,
         'optimizer' : 'LBFGS',
-        'chooseBR' : True, # choose whether Bayesian regularization is desired during training
-        'error_data_factor' : 1, # choose initial value of 
-        'error_reg_factor' : 1
+        'chooseBR' : True, # choose whether Bayesian regularization (BR) is desired during training
+        'error_data_factor' : 1, # choose initial value of BR's prefactor for data error
+        'error_reg_factor' : 0 # choose initial value of BR's prefactor for regularization error
     }
 
     return generateData_dict, net_dict, trainConfig_dict
