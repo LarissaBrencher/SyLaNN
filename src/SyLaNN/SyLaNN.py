@@ -157,8 +157,6 @@ class SLNet(nn.Module):
         """
         Returns the Jacobian matrix of the loss with respect to weights.
 
-        :param weights: Parameters, i.e. weights, of the neural network
-        :type weights: Tensor
         :param loss: Error loss of the prediction compared to the reference solution (without penalty)
         :type loss: Tensor
 
@@ -178,8 +176,6 @@ class SLNet(nn.Module):
         """
         Returns the Hessian matrix of the loss with respect to weights (Gauss-Newton approximation).
 
-        :param weights: Parameters, i.e. weights, of the neural network
-        :type weights: Tensor
         :param loss: Error loss of the prediction compared to the reference solution (without penalty)
         :type loss: Tensor
 
@@ -191,19 +187,6 @@ class SLNet(nn.Module):
         # calculate Hessian matrix approximation by multiplying J^T * J
         hessian_approx = torch.matmul(jacobian_T, jacobian) # size: numWeights x numWeights
         return hessian_approx
-
-    def trace_Hinv(self, hessian):
-        """
-        Returns the trace of the inverse Hessian matrix (loss with respect to weights, Gauss-Newton approximation)
-        for Bayesian regularization hyperparameter optimization.
-
-        :param hessian: Hessian matrix
-        :type hessian: Tensor
-
-        :return: Trace of the inverse Hessian matrix
-        :rtype: Tensor
-        """
-        return torch.trace(torch.linalg.inv(hessian))
 
     def trainLBFGS_iteration(self, optimizer, data, target, regObj, gamma_idx):
         """
@@ -232,23 +215,33 @@ class SLNet(nn.Module):
             output = self(data)
             MSE_loss = criterion(output, target)
             reg_loss = regObj(self.get_weights_tensor(), self.lmb_reg, self.approx_eps, gamma_idx)
-            loss = MSE_loss + reg_loss
-            loss.backward()
-            return loss
+            
+            # Bayesian regularization update of prefactors
+            if self.chooseBR is True:
+                # TODO add current epoch in order to compute only every n-th time
+                squared_loss = (self(data) - target).pow(2)
+                hessian_MSE = self.loss_hessian(squared_loss)
+                hessian_penalty = regObj.calculate_hessian(self.get_weights_tensor(), self.approx_eps, gamma_idx)
+                tr_H = torch.trace(hessian_MSE+hessian_penalty)
+
+                N_p = data.size(dim=1) # TODO add number of parameters somewhere as self.something?
+                N_eff = N_p - self.alpha_reg * (1/tr_H)
+                N_D = data.size(dim=0)
+                self.alpha_reg = N_eff / (2*MSE_loss)
+                self.beta_MSE = (N_D - N_eff) / (2*reg_loss)
+
+                loss = self.beta*MSE_loss + self.alpha*reg_loss
+                loss.backward()
+                return loss
+
+            elif self.chooseBR is False:
+                loss = MSE_loss + reg_loss
+                loss.backward()
+                return loss
             
         train_loss = optimizer.step(closure)
         output_plot = self(data)
         MSE_loss_plot = criterion(output_plot, target)
-
-        # squared_loss = (self(data) - target).pow(2)
-        # hessian_MSE = self.loss_hessian(squared_loss)
-        # Hessian inverse: do we need some normalization factor? Quite large numbers
-        # TODO what to do when Hessian is singular, non-invertible
-        # print(self.trace_Hinv(hessian_MSE))
-
-        # TODO add alpha, beta
-        # hessian_penalty = regObj.calculate_hessian(self.get_weights_tensor(), self.approx_eps, gamma_idx)
-
         return train_loss, MSE_loss_plot
 
     def train(self, generatedDatasets_dict, trainConfig_dict, gamma_idx=0.5):
@@ -274,6 +267,13 @@ class SLNet(nn.Module):
         n_epochs3 = int(trainConfig_dict['trainEpochs3']) # int(epochs+1)
         self.lmb_reg = trainConfig_dict['regularization_weight'] # regularization weight
         self.approx_eps = trainConfig_dict['regApprox_threshold'] # penalty approximation threshold
+
+        self.chooseBR = trainConfig_dict['chooseBR']
+        self.beta_MSE = trainConfig_dict['error_data_factor']
+        self.alpha_reg = trainConfig_dict['error_reg_factor']
+        if self.chooseBR is False: # in order to avoid wrong prefactor values when BR is off
+            assert self.beta_MSE == 1, "Please set beta MSE prefactor to one, if Bayesian regularization is not used."
+            assert self.alpha_reg == 1, "Please set alpha reg prefactor to one, if Bayesian regularization is not used."
 
         err_test_final = []
         found_eq = []
