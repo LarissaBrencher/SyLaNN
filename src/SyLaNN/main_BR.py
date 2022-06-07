@@ -54,12 +54,13 @@ if __name__ == "__main__":
 
         # training of network with given data (generated or loaded and formatted previously)
         # and save to file in corresponding folder (encoded with date and time when simulation started)
-        gamma_idx = 0.5
-        simulationResults_dict = mySLnet.train(generatedDatasets_dict, trainConfig_dict, gamma_idx)
+        
+        gamma_values = [] # TODO define gamma values as list or any other iterable construct
+        for gamma_idx, gamma_val in enumerate(gamma_values):
+            simulationResults_dict = mySLnet.train(generatedDatasets_dict, trainConfig_dict, gamma_val)
 
-        # TODO needs changes if we have a dataset given and do not need the generating dict
-        # TODO save corresponding gamma in result dictionary
-        # TODO correct name string so it does not contain additional punctuations
-        file_name = generateData_dict['saveFile_name'] + "_gamma" + str(gamma_idx) + ".json"
-        save_file_name = save_folder_path + curr_time + file_name
-        manageData_obj.saveSimulation(save_file_name, generateData_dict, net_dict, trainConfig_dict, simulationResults_dict)
+            # TODO needs changes if we have a dataset given and do not need the generating dict
+            # current L1 ratio (gamma_val) is saved within result_dict
+            file_name = generateData_dict['saveFile_name'] + "_gammaIdx" + str(gamma_idx) + ".json"
+            save_file_name = save_folder_path + curr_time + file_name
+            manageData_obj.saveSimulation(save_file_name, generateData_dict, net_dict, trainConfig_dict, simulationResults_dict)
