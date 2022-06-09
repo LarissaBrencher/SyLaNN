@@ -27,40 +27,51 @@ if __name__ == "__main__":
         curr_date = datetime.today().strftime('%Y-%m-%d')
         curr_time = datetime.today().strftime('%H-%M-%S')
         folder_name = curr_date + '_SLNNsimulation'
+        loadData_folder = 'datasets'
         try:
                 os.mkdir(folder_name)
         except OSError:
-                print ("Creation of the directory %s failed" % folder_name)
+                print ("Creation of the directory %s failed (already exists)" % folder_name)
         else:
                 print ("Successfully created the directory %s " % folder_name)
 
         if os.path == 'nt': # Windows
                 save_folder_path = folder_name + '\\'
+                load_folder_path = loadData_folder + '\\'
         else: # Linux 
                 save_folder_path = folder_name + '/'
+                load_folder_path = loadData_folder + '/'
         
-        # read configurations from input file (dictionaries)
-        generateData_dict, net_dict, trainConfig_dict = input_dicts.readDictionaries()
+        # read SyLaNN configurations and its training settings from input file (dictionaries)
+        net_dict, trainConfig_dict = input_dicts.readDictionaries()[1:2]
 
         # generate data, if no dataset is given
-        # TODO change to load data set and check format of dictionary which is read in
+        # TODO check format of dictionary which is read in
         manageData_obj = dm.DataManager()
-        generatedDatasets_dict = manageData_obj.generateData(generateData_dict)
+        data_file_name = "" # TODO add file name
+        loadedDatasets_withConfigs = manageData_obj.loadDataset(load_folder_path, data_file_name)
+        # generatedDatasets_dict = manageData_obj.generateData(generateData_dict)
 
-        n_params = generatedDatasets_dict['x_dim']
+        # n_params = generatedDatasets_dict['x_dim']
+        n_params = loadedDatasets_withConfigs['x_dim']
 
         # create Symbolic-Layered Neural Network (short SLNN)
         mySLnet = SyLaNN.SLNet(n_hiddenLayers=net_dict['n_hidden'], fcts=net_dict['symbolic_layer'], data_dim=n_params)
 
         # training of network with given data (generated or loaded and formatted previously)
         # and save to file in corresponding folder (encoded with date and time when simulation started)
-        
-        gamma_values = [] # TODO define gamma values as list or any other iterable construct
+        gamma_start, gamma_stop = 0, 1 # regular values for L1 ratio
+        gamma_nSteps = 10
+        gamma_step = 1/gamma_nSteps
+        gamma_values = [*range(gamma_start, gamma_stop, gamma_step)] # TODO define gamma values as list or any other iterable construct
         for gamma_idx, gamma_val in enumerate(gamma_values):
-            simulationResults_dict = mySLnet.train(generatedDatasets_dict, trainConfig_dict, gamma_val)
+            # simulationResults_dict = mySLnet.train(generatedDatasets_dict, trainConfig_dict, gamma_val)
+            simulationResults_dict = mySLnet.train(loadedDatasets_withConfigs, trainConfig_dict, gamma_val)
 
             # TODO needs changes if we have a dataset given and do not need the generating dict
             # current L1 ratio (gamma_val) is saved within result_dict
-            file_name = generateData_dict['saveFile_name'] + "_gammaIdx" + str(gamma_idx) + ".json"
+            # file_name = generateData_dict['saveFile_name'] + "_gammaIdx" + str(gamma_idx) + ".json"
+            file_name = loadedDatasets_withConfigs['saveFile_name'] + "_gammaIdx" + str(gamma_idx) + ".json"
             save_file_name = save_folder_path + curr_time + file_name
-            manageData_obj.saveSimulation(save_file_name, generateData_dict, net_dict, trainConfig_dict, simulationResults_dict)
+            # manageData_obj.saveSimulation(save_file_name, generateData_dict, net_dict, trainConfig_dict, simulationResults_dict)
+            manageData_obj.saveSimulation(save_file_name, loadedDatasets_withConfigs, net_dict, trainConfig_dict, simulationResults_dict)
