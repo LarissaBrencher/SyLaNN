@@ -56,15 +56,44 @@ class DataManager():
         }
         return dataset_dict
 
-    def loadDataset(self, file):
+    def saveDataset(self, save_file_name, configGenerateData_dict, dataset_dict):
         """
-        Loads a given dataset. (Currently not implemented)
+        Saves the previously generated dataset and its settings to a json file as a dictionary.
+
+        :param save\_file\_name: Name of the JSON file in which the dataset is saved.
+        :type save\_file\_name: str
+        :param configGenerateData\_dict: Dictionary containing the definitions for generating a dataset.
+        :type configGenerateData\_dict: dict
+        :param dataset\_dict: Dictionary containing the dataset.
+        :type dataset\_dict: dict
         """
-        pass
+        saveFile_dict = {
+            **configGenerateData_dict,
+            **dataset_dict
+        }
+
+        with open(save_file_name, 'w') as outfile:
+            json.dump(saveFile_dict, outfile, indent = 4)
+
+    def loadDataset(self, file_dir, data_dict):
+        """
+        Loads a given dataset.
+
+        :param file\_dir: Directory in which the dataset file is located.
+        :type file\_dir: str
+        :param data\_dict: Name of the JSON file in which the dataset is saved.
+        :type data\_dict: str
+        """
+        data_path = file_dir + data_dict
+        dataset = open(data_path,)
+        data = json.load(dataset)
+        dataset.close()
+        return data
 
     def formatDataset(self, unformattedDataset):
         """
         Formats a given dataset into the required structure. (Currently not implemented)
+        Or check, whether the dictionary is correctly generated.
         """
         pass
 
