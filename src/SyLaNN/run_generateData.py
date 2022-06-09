@@ -1,4 +1,4 @@
-# main to generate a dataset for the Freundlich isotherm setting
+# main to generate a dataset for given settings in input_dicts.py
 # in order to load an existing dataset for training, the dataset needs to be generated here first
 
 import torch
