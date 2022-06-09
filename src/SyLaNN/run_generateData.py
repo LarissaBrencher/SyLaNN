@@ -10,7 +10,6 @@ from datetime import datetime
 # own imports
 import input_dicts
 import datamanager as dm
-import SyLaNN
 
 if __name__ == "__main__":
         # set seed for reproducability
