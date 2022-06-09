@@ -7,7 +7,7 @@ import versioneer
 
 setup(
     name="SyLaNN",
-    version= "0.0.1", # versioneer.get_version(),
+    version= versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
     author="Larissa Brencher",
     # long_description=long_description,
