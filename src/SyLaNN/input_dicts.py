@@ -29,10 +29,10 @@ def readDictionaries():
     generateData_dict = {
         'n_train' : 2000,
         'n_test' : 1000,
-        'domain_train' : [-1, 1],
-        'domain_test' : [-2, 2],
-        'ref_fct_str' : 'lambda K, C, n : K * C ** n',
-        'saveFile_name' : "_FreundlichIsotherm" # "_ex" + str(exNum) + ".json"
+        'domain_train' : [0.25, 0.75],
+        'domain_test' : [0, 1],
+        'ref_fct_str' : 'lambda C : 4 * C ** (1/3)', # K=4, n=1/3
+        'saveFile_name' : "_FreundlichIsotherm"
     }
 
     # for creating the neural network structure
@@ -43,14 +43,16 @@ def readDictionaries():
                             *[ops.Identity()] * 4,
                             *[ops.Square()] * 4,
                             *[ops.Exp()] * 2,
-                            *[ops.Product()] * 2
+                            *[ops.Product()] * 2,
+                            *[ops.Power()] * 2
                             ],
         'symbolic_layer_str': [
                             'Const', 'Const', 
                             'Id', 'Id', 'Id', 'Id', 
                             'Sq', 'Sq', 'Sq', 'Sq',
                             'Exp', 'Exp',
-                            'Prod', 'Prod'
+                            'Prod', 'Prod',
+                            'Pow', 'Pow'
                             ]
     }
 
@@ -58,7 +60,7 @@ def readDictionaries():
     # LBFGS vs Adam: 50,100, then 100:100:1000, then 1000,5000,10000,15000
     # BR's init alpha, beta according to Bayesian regularization paper
     trainConfig_dict = {
-        'variables_str' : ['K', 'C', 'n'], # ['x', 'y', 'z'],
+        'variables_str' : ['x', 'y', 'z'], # ['C'],
         'loop1Reg' : 'ElasticNetapprox', # None, # warm-up phase
         'loop2Reg' : 'ElasticNetapprox', # 'L12approx',
         'loop3Reg' : 'ElasticNetapprox', # 'L12approx',
