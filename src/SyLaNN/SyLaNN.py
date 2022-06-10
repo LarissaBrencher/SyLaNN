@@ -227,9 +227,10 @@ class SLNet(nn.Module):
                     squared_loss = (self(data) - target).pow(2)
                     hessian_MSE = self.loss_hessian(squared_loss)
                     hessian_penalty = regObj.calculate_hessian(self.get_weights_tensor(), self.approx_eps, gamma_val)
-                    tr_H = torch.trace(hessian_MSE+hessian_penalty)
+                    H_pinv = torch.linalg.pinv(hessian_MSE+hessian_penalty)
+                    tr_Hinv = torch.trace(H_pinv)
                     N_p = data.size(dim=1) # TODO add number of parameters somewhere as self.something?
-                    N_eff = N_p - self.alpha_reg * (1/tr_H)
+                    N_eff = N_p - self.alpha_reg * tr_Hinv
                     N_D = data.size(dim=0)
                     # update prefactors
                     self.alpha_reg = N_eff / (2*MSE_loss)
@@ -479,10 +480,10 @@ class SLNet(nn.Module):
         result_dict = {
             'found_eq' : found_eq,
             'elasticNet_L1ratio' : gamma_val,
+            'simulation_time' : total_time,
             'training_loss' : train_loss_list,
             'training_onlyMSE_loss' : train_loss_onlyMSE_list,
-            'testing_loss' : err_test_list,
-            'simulation_time' : total_time
+            'testing_loss' : err_test_list
         }
         return result_dict
 
