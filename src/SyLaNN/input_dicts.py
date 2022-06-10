@@ -31,7 +31,7 @@ def readDictionaries():
         'n_test' : 1000,
         'domain_train' : [0.25, 0.75],
         'domain_test' : [0, 1],
-        'ref_fct_str' : 'lambda C : 4 * C ** (1/3)', # K=4, n=1/3
+        'ref_fct_str' : 'lambda C : 0.00035 * C ** (0.874)', # K=3.5e-4, n=0.874
         'saveFile_name' : "_FreundlichIsotherm"
     }
 
