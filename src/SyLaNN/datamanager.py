@@ -79,7 +79,7 @@ class DataManager():
         :param dataset\_dict: Dictionary containing the dataset.
         :type dataset\_dict: dict
         """
-        dataset_dict_format = self.formatDataset(dataset_dict)
+        dataset_dict_format = self.tensor2list(dataset_dict)
         saveFile_dict = {
             **configGenerateData_dict,
             **dataset_dict_format
@@ -100,7 +100,7 @@ class DataManager():
         data_path = file_dir + data_dict
         dataset = open(data_path,)
         data = json.load(dataset)
-        dataset_format = self.formatDataset(data) # change lists back to torch tensors
+        dataset_format = self.list2tensor(data) # change lists back to torch tensors
         dataset.close()
         return dataset_format
 
