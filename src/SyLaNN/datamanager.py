@@ -7,10 +7,12 @@ string lambda expression to simplify further processing.
 """
 
 import inspect
+from numpy import std
 import torch
 import json
 from sympy import symbols
 from sympy.utilities.lambdify import lambdastr
+from scipy.stats import truncnorm
 
 class DataManager():
     """
@@ -37,14 +39,24 @@ class DataManager():
         # create training data
         range_min_train = generateData_dict['domain_train'][0]
         range_max_train = generateData_dict['domain_train'][1]
-        # TODO regular N(0,1) narrow enough?
-        inputX_train = (range_max_train - range_min_train) * torch.randn([generateData_dict['n_train'], x_dim]) + range_min_train
+        # uniform-distributed:
+        # inputX_train = (range_max_train - range_min_train) * torch.rand([generateData_dict['n_train'], x_dim]) + range_min_train
+        # normal-distributed:
+        mean_train = (range_max_train - range_min_train) / 2
+        std_train = 1 # variance 1 first
+        a_train, b_train = (range_min_train - mean_train) / std_train, (range_max_train - mean_train) / std_train
+        inputX_train = truncnorm.rvs(a_train, b_train, size=[generateData_dict['n_train'], x_dim])
         outputY_train = torch.tensor([[ref_fct(*x_i)] for x_i in inputX_train])
         # create testing data
         range_min_test = generateData_dict['domain_test'][0]
         range_max_test = generateData_dict['domain_test'][1]
-        # TODO regular N(0,1) narrow enough?
-        inputX_test = (range_max_test - range_min_test) * torch.randn([generateData_dict['n_test'], x_dim]) + range_min_test
+        # uniform-distributed:
+        # inputX_test = (range_max_test - range_min_test) * torch.rand([generateData_dict['n_test'], x_dim]) + range_min_test
+        # normal-distributed:
+        mean_test = (range_max_test - range_min_test) / 2
+        std_test = 1 # variance 1 first
+        a_test, b_test = (range_min_test - mean_test) / std_test, (range_max_test - mean_test) / std_test
+        inputX_test = truncnorm.rvs(a_test, b_test, size=[generateData_dict['n_test'], x_dim])
         outputY_test = torch.tensor([[ref_fct(*x_i)] for x_i in inputX_test])
         # write generated data sets into dictionary
         dataset_dict = {
@@ -67,9 +79,10 @@ class DataManager():
         :param dataset\_dict: Dictionary containing the dataset.
         :type dataset\_dict: dict
         """
+        dataset_dict_format = self.formatDataset(dataset_dict)
         saveFile_dict = {
             **configGenerateData_dict,
-            **dataset_dict
+            **dataset_dict_format
         }
 
         with open(save_file_name, 'w') as outfile:
@@ -87,15 +100,60 @@ class DataManager():
         data_path = file_dir + data_dict
         dataset = open(data_path,)
         data = json.load(dataset)
+        dataset_format = self.formatDataset(data) # change lists back to torch tensors
         dataset.close()
-        return data
+        return dataset_format
 
-    def formatDataset(self, unformattedDataset):
+    def tensor2list(self, unformattedDataset):
         """
-        Formats a given dataset into the required structure. (Currently not implemented)
-        Or check, whether the dictionary is correctly generated.
+        Formats a given dataset's tensors to lists for being able to be saved in JSON files.
+
+        :param unfomattedDataset: Previously generated dataset which still needs formatting.
+        :type unformattedDataset: dict
         """
-        pass
+        # training datapoints
+        if torch.is_tensor(unformattedDataset['X_train']):
+            # convert to list as a format savable by JSON
+            unformattedDataset['X_train'] = unformattedDataset['X_train'].tolist()
+        if torch.is_tensor(unformattedDataset['y_train']):
+            # convert to list as a format savable by JSON
+            unformattedDataset['y_train'] = unformattedDataset['y_train'].tolist()
+
+        # testing datapoints
+        if torch.is_tensor(unformattedDataset['X_test']):
+            # convert to list as a format savable by JSON
+            unformattedDataset['X_test'] = unformattedDataset['X_test'].tolist()
+        if torch.is_tensor(unformattedDataset['y_test']):
+            # convert to list as a format savable by JSON
+            unformattedDataset['y_test'] = unformattedDataset['y_test'].tolist()
+
+        return unformattedDataset  # which is now formatted after calling this method
+
+    def list2tensor(self, unformattedDataset):
+        """
+        Formats lists from a loaded dataset back to tensors for further computations.
+
+        :param unfomattedDataset: Previously loaded dataset which still needs formatting.
+        :type unformattedDataset: dict
+        """
+        # training datapoints
+        if isinstance(unformattedDataset['X_train'], list):
+            # convert to tensor for evaluation after loading the dataset from JSON
+            unformattedDataset['X_train'] = torch.tensor(unformattedDataset['X_train'])
+        if isinstance(unformattedDataset['y_train'], list):
+            # convert to tensor for evaluation after loading the dataset from JSON
+            unformattedDataset['y_train'] = torch.tensor(unformattedDataset['X_train'])
+
+        # testing datapoints
+        if isinstance(unformattedDataset['X_test'], list):
+            # convert to tensor for evaluation after loading the dataset from JSON
+            unformattedDataset['X_test'] = torch.tensor(unformattedDataset['X_test'])
+        if isinstance(unformattedDataset['y_test'], list):
+            # convert to tensor for evaluation after loading the dataset from JSON
+            unformattedDataset['y_test'] = torch.tensor(unformattedDataset['y_test'])
+
+        return unformattedDataset  # which is now formatted after calling this method
+            
 
     def sympy2str(self, sympyFct, vars_list):
         """
