@@ -144,7 +144,7 @@ class DataManager():
             unformattedDataset['X_train'] = torch.tensor(unformattedDataset['X_train'])
         if isinstance(unformattedDataset['y_train'], list):
             # convert to tensor for evaluation after loading the dataset from JSON
-            unformattedDataset['y_train'] = torch.tensor(unformattedDataset['X_train'])
+            unformattedDataset['y_train'] = torch.tensor(unformattedDataset['y_train'])
 
         # testing datapoints
         if isinstance(unformattedDataset['X_test'], list):
