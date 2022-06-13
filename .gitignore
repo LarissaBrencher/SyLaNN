@@ -131,4 +131,4 @@ dmypy.json
 # *.json # include JSONs for generated datasets to reproduce results
 
 # Local simulation results
-*_SLNNsimulation
+*_SyLaNNsimulation
