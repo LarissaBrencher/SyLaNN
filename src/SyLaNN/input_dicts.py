@@ -73,7 +73,8 @@ def readDictionaries():
         'optimizer' : 'LBFGS',
         'chooseBR' : True, # choose whether Bayesian regularization (BR) is desired during training
         'error_data_factor' : 1, # choose initial value of BR's prefactor for data error
-        'error_reg_factor' : 0 # choose initial value of BR's prefactor for regularization error
+        'error_reg_factor' : 0, # choose initial value of BR's prefactor for regularization error
+        'updateBRparams_every_n_epoch' : 5
     }
 
     return generateData_dict, net_dict, trainConfig_dict

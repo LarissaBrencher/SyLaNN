@@ -223,7 +223,7 @@ class SLNet(nn.Module):
             # Bayesian regularization computation
             if self.chooseBR is True:
                 # update prefactors every n-th epoch
-                if (current_epoch % 5) == 0:
+                if (current_epoch % self.updateBR_everyNepoch) == 0:
                     squared_loss = (self(data) - target).pow(2)
                     hessian_MSE = self.loss_hessian(squared_loss)
                     hessian_penalty = regObj.calculate_hessian(self.get_weights_tensor(), self.approx_eps, gamma_val)
@@ -281,6 +281,7 @@ class SLNet(nn.Module):
         self.chooseBR = trainConfig_dict['chooseBR']
         self.beta_MSE = trainConfig_dict['error_data_factor']
         self.alpha_reg = trainConfig_dict['error_reg_factor']
+        self.updateBR_everyNepoch = trainConfig_dict['updateBRparams_every_n_epoch']
         if self.chooseBR is False: # in order to avoid wrong prefactor values when BR is off
             assert self.beta_MSE == 1, "Please set beta MSE prefactor to one, if Bayesian regularization is not used."
             assert self.alpha_reg == 1, "Please set alpha reg prefactor to one, if Bayesian regularization is not used."
