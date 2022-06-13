@@ -43,11 +43,12 @@ if __name__ == "__main__":
                 load_folder_path = loadData_folder + '/'
         
         # read SyLaNN configurations and its training settings from input file (dictionaries)
-        net_dict, trainConfig_dict = input_dicts.readDictionaries()[1:2]
+        net_dict = input_dicts.readDictionaries()[1]
+        trainConfig_dict = input_dicts.readDictionaries()[2]
 
         # generate data, if no dataset is given
         manageData_obj = dm.DataManager()
-        data_file_name = "2022-06-13_FreundlichIsotherm.json"
+        data_file_name = "2022-06-13_data_FreundlichIsotherm.json"
         loadedDatasets_withConfigs = manageData_obj.loadDataset(load_folder_path, data_file_name)
         n_params = loadedDatasets_withConfigs['x_dim']
 
@@ -56,10 +57,11 @@ if __name__ == "__main__":
 
         # training of network with given data (generated or loaded and formatted previously)
         # and save to file in corresponding folder (encoded with date and time when simulation started)
-        gamma_start, gamma_stop = 0, 1 # regular values for L1 ratio
         gamma_nSteps = 10
         gamma_step = 1/gamma_nSteps
-        gamma_values = [*range(gamma_start, gamma_stop, gamma_step)]
+        gamma_start, gamma_stop = 0, 1+gamma_step # regular values for L1 ratio
+        gamma_values = [*np.arange(gamma_start, gamma_stop, gamma_step)]
+        print(gamma_values)
         for gamma_idx, gamma_val in enumerate(gamma_values):
             simulationResults_dict = mySyLaNN.train(loadedDatasets_withConfigs, trainConfig_dict, gamma_val)
             # current L1 ratio (gamma_val) is saved within result dictionary
