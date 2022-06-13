@@ -50,13 +50,13 @@ if __name__ == "__main__":
         # TODO write helper method to determine number of variables/parameters
         n_params = generatedDatasets_dict['x_dim']
 
-        # create Symbolic-Layered Neural Network (short SLNN)
-        mySLnet = SyLaNN.SLNet(n_hiddenLayers=net_dict['n_hidden'], fcts=net_dict['symbolic_layer'], data_dim=n_params)
+        # create Symbolic-Layered Neural Network (short SyLaNN)
+        mySyLaNN = SyLaNN.SLNet(n_hiddenLayers=net_dict['n_hidden'], fcts=net_dict['symbolic_layer'], data_dim=n_params)
 
         # training of network with given data (generated or loaded and formatted previously)
         # and save to file in corresponding folder (encoded with date and time when simulation started)
         gamma_miniTest = 0.5
-        simulationResults_dict = mySLnet.train(generatedDatasets_dict, trainConfig_dict, gamma_miniTest)
+        simulationResults_dict = mySyLaNN.train(generatedDatasets_dict, trainConfig_dict, gamma_miniTest)
         # print(mySLnet.get_weights_tensor())
         # TODO needs changes if we have a dataset given and do not need the generating dict
         file_name = generateData_dict['saveFile_name']
