@@ -48,7 +48,7 @@ if __name__ == "__main__":
 
         # generate data, if no dataset is given
         manageData_obj = dm.DataManager()
-        data_file_name = "2022-06-13_data_FreundlichIsotherm.json"
+        data_file_name = "2022-06-14_data_LangmuirIsotherm.json"
         loadedDatasets_withConfigs = manageData_obj.loadDataset(load_folder_path, data_file_name)
         n_params = loadedDatasets_withConfigs['x_dim']
 
