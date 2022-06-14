@@ -61,7 +61,6 @@ if __name__ == "__main__":
         gamma_step = 1/gamma_nSteps
         gamma_start, gamma_stop = 0, 1+gamma_step # regular values for L1 ratio
         gamma_values = [*np.arange(gamma_start, gamma_stop, gamma_step)]
-        print(gamma_values)
         for gamma_idx, gamma_val in enumerate(gamma_values):
             simulationResults_dict = mySyLaNN.train(loadedDatasets_withConfigs, trainConfig_dict, gamma_val)
             # current L1 ratio (gamma_val) is saved within result dictionary

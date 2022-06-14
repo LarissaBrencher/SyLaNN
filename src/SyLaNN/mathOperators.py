@@ -227,6 +227,65 @@ class Exp(BaseFunction):
         return (np.exp(x) - 1) / self.norm
 
 
+#class Power(BaseFunction):
+#    """
+#    A class for the mathematical operator applying the power with a constant exponent. The first input is the base, the second one is the exponent.
+#    Takes BaseFunction as an argument.
+#    """
+#    def __init__(self, norm=1.):
+#        """
+#        Constructor method, inherits from BaseFunction with adjusted norm parameter
+#        
+#        :param norm: Normalizing factor of BaseFunction, default 0.1
+#        :type norm: int
+#        """
+#        super().__init__(norm=norm)
+#        self.exponent = 1/2 # exponent
+#
+#    def torch(self, x):
+#        """
+#        Returns a tensor which contains the power of two inputs.
+#
+#        :param x: Input within SyLaNN's custom layer (previous to the application of operators)
+#        :type x: Tensor
+#        :param y: Input within SyLaNN's custom layer (previous to the application of operators)
+#        :type y: Tensor
+#
+#        :return: Resulting tensor after the power has been applied.
+#        :rtype: Tensor
+#        """
+#        # exponent = Constant()
+#        return torch.pow(x, self.exponent) / self.norm # ** exponent.torch(x) / self.norm # torch.pow(x, self.exponent) / self.norm
+#
+#    def sp(self, x):
+#        """
+#        Returns a tensor which contains the power of two inputs.
+#
+#        :param x: Input within SyLaNN's custom layer (previous to the application of operators)
+#        :type x: Tensor
+#        :param y: Input within SyLaNN's custom layer (previous to the application of operators)
+#        :type y: Tensor
+#
+#        :return: Resulting tensor after the power has been applied.
+#        :rtype: Tensor
+#        """
+#        return x**(0.5) # x ** self.exponent / self.norm
+#
+#    def np(self, x):
+#        """
+#        Returns a NumPy array which contains the power of two inputs.
+#
+#        :param x: Input within SyLaNN's custom layer (previous to the application of operators)
+#        :type x: NumPy array
+#        :param y: Input within SyLaNN's custom layer (previous to the application of operators)
+#        :type y: NumPy array
+#
+#        :return: Resulting tensor after the power has been applied.
+#        :rtype: NumPy array
+#        """
+#        return np.sqrt(x) # np.power(x, self.exponent) / self.norm
+
+
 class BaseFunction2:
     """A class for binary mathematical operators, i.e. function which take two inputs."""
     def __init__(self, norm=1.):
@@ -333,70 +392,13 @@ class Product(BaseFunction2):
         return x * y / self.norm
 
 
-class Power(BaseFunction2):
-    """
-    A class for the mathematical operator applying the power. The first input is the base, the second one is the exponent.
-    Takes BaseFunction2 as an argument.
-    """
-    def __init__(self, norm=0.1):
-        """
-        Constructor method, inherits from BaseFunction2 with adjusted norm parameter
-        
-        :param norm: Normalizing factor of BaseFunction2, default 0.1
-        :type norm: int
-        """
-        super().__init__(norm=norm)
-
-    def torch(self, x, y):
-        """
-        Returns a tensor which contains the power of two inputs.
-
-        :param x: Input within SyLaNN's custom layer (previous to the application of operators)
-        :type x: Tensor
-        :param y: Input within SyLaNN's custom layer (previous to the application of operators)
-        :type y: Tensor
-
-        :return: Resulting tensor after the power has been applied.
-        :rtype: Tensor
-        """
-        return x ** y / self.norm
-
-    def sp(self, x, y):
-        """
-        Returns a tensor which contains the power of two inputs.
-
-        :param x: Input within SyLaNN's custom layer (previous to the application of operators)
-        :type x: Tensor
-        :param y: Input within SyLaNN's custom layer (previous to the application of operators)
-        :type y: Tensor
-
-        :return: Resulting tensor after the power has been applied.
-        :rtype: Tensor
-        """
-        return x ** y / self.norm
-
-    def np(self, x, y):
-        """
-        Returns a NumPy array which contains the power of two inputs.
-
-        :param x: Input within SyLaNN's custom layer (previous to the application of operators)
-        :type x: NumPy array
-        :param y: Input within SyLaNN's custom layer (previous to the application of operators)
-        :type y: NumPy array
-
-        :return: Resulting tensor after the power has been applied.
-        :rtype: NumPy array
-        """
-        return x ** y / self.norm
-
-
 # TODO add some assert statements to ensure that y is never zero
 class Quotient(BaseFunction2):
     """
     A class for the mathematical operator applying the quotient of two inputs.
     Takes BaseFunction2 as an argument.
     """
-    def __init__(self, norm=0.1):
+    def __init__(self, norm=1.):
         """
         Constructor method, inherits from BaseFunction2 with adjusted norm parameter
         

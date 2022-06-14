@@ -26,7 +26,7 @@ if __name__ == "__main__":
         # create folders for saving results and plots later
         curr_date = datetime.today().strftime('%Y-%m-%d')
         curr_time = datetime.today().strftime('%H-%M-%S')
-        folder_name = curr_date + '_SLNNsimulation'
+        folder_name = curr_date + '_SyLaNNsimulation'
         try:
                 os.mkdir(folder_name)
         except OSError:

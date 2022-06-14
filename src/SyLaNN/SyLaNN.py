@@ -223,7 +223,7 @@ class SLNet(nn.Module):
             # Bayesian regularization computation
             if self.chooseBR is True:
                 # update prefactors every n-th epoch
-                if (current_epoch % self.updateBR_everyNepoch) == 0:
+                if (current_epoch != 0) and ((current_epoch % self.updateBR_everyNepoch) == 0):
                     squared_loss = (self(data) - target).pow(2)
                     hessian_MSE = self.loss_hessian(squared_loss)
                     hessian_penalty = regObj.calculate_hessian(self.get_weights_tensor(), self.approx_eps, gamma_val)
@@ -236,7 +236,7 @@ class SLNet(nn.Module):
                     self.alpha_reg = N_eff / (2*MSE_loss)
                     self.beta_MSE = (N_D - N_eff) / (2*reg_loss)
                 # calculate current loss and apply backpropagation
-                loss = self.beta*MSE_loss + self.alpha*reg_loss
+                loss = self.beta_MSE*MSE_loss + self.alpha_reg*reg_loss
                 loss.backward()
                 return loss
 
