@@ -31,8 +31,8 @@ def readDictionaries():
         'n_test' : 1000,
         'domain_train' : [0.25, 0.75],
         'domain_test' : [0, 1],
-        'ref_fct_str' : 'lambda C : 0.00035 * C ** (0.874)', # K=3.5e-4, n=0.874
-        'saveFile_name' : "_FreundlichIsotherm"
+        'ref_fct_str' : 'lambda C : 0.00059 * (1*C) / (1 + 1*C)', # k=1 q_max = 5.9e-4
+        'saveFile_name' : "_LangmuirIsotherm"
     }
 
     # for creating the neural network structure
@@ -43,16 +43,14 @@ def readDictionaries():
                             *[ops.Identity()] * 4,
                             *[ops.Square()] * 4,
                             *[ops.Exp()] * 2,
-                            *[ops.Product()] * 2,
-                            *[ops.Power()] * 2
+                            *[ops.Product()] * 2
                             ],
         'symbolic_layer_str': [
                             'Const', 'Const', 
                             'Id', 'Id', 'Id', 'Id', 
                             'Sq', 'Sq', 'Sq', 'Sq',
                             'Exp', 'Exp',
-                            'Prod', 'Prod',
-                            'Pow', 'Pow'
+                            'Prod', 'Prod'
                             ]
     }
 
@@ -71,9 +69,9 @@ def readDictionaries():
         'trainEpochs2' : 20,
         'trainEpochs3' : 80,
         'optimizer' : 'LBFGS',
-        'chooseBR' : True, # choose whether Bayesian regularization (BR) is desired during training
+        'chooseBR' : False, # True, # choose whether Bayesian regularization (BR) is desired during training
         'error_data_factor' : 1, # choose initial value of BR's prefactor for data error
-        'error_reg_factor' : 0, # choose initial value of BR's prefactor for regularization error
+        'error_reg_factor' : 1, #  0, # choose initial value of BR's prefactor for regularization error
         'updateBRparams_every_n_epoch' : 5
     }
 
