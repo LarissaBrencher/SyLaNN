@@ -350,6 +350,7 @@ class SyLaNet(nn.Module):
                     train_loss_list.append(train_loss_val)
 
                     # update prefactors every n-th epoch
+                    # update prefactors every n-th epoch
                     if (epo != 0) and ((epo % self.updateBR_everyNepoch) == 0):
                         squared_loss = (self(data) - target).pow(2)
                         hessian_MSE = self.loss_hessian(squared_loss)

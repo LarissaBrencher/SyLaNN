@@ -31,8 +31,8 @@ def readDictionaries():
         'n_test' : 1000,
         'domain_train' : [0.25, 0.75],
         'domain_test' : [0, 1],
-        'ref_fct_str' : 'lambda C : 0.00059 * (1*C) / (1 + 1*C)', # k=1 q_max = 5.9e-4
-        'saveFile_name' : "_LangmuirIsotherm"
+        'ref_fct_str' : 'lambda x : x + 8', # 'lambda C : 0.00059 * (1*C) / (1 + 1*C)', # k=1 q_max = 5.9e-4
+        'saveFile_name' : "_LinearMiniTest"
     }
 
     # for creating the neural network structure
@@ -67,7 +67,7 @@ def readDictionaries():
         'regularization_weight' : 0.001,
         'trainEpochs1' : 5,
         'trainEpochs2' : 20,
-        'trainEpochs3' : 40,
+        'trainEpochs3' : 50,
         'optimizer' : 'LBFGS',
         'chooseBR' : True, # choose whether Bayesian regularization (BR) is desired during training
         'error_data_factor' : 1, # choose initial value of BR's prefactor for data error
