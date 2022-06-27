@@ -4,6 +4,7 @@ This includes the construction of the customized layer, the architecture of the 
 and the definition of the approximated penalty function.
 """
 
+from multiprocessing import reduction
 import numpy as np
 import torch
 import torch.nn as nn
@@ -150,9 +151,9 @@ class SyLaNet(nn.Module):
     
     def loss(self):
         """
-        Returns the loss value (in this case the mean-squared error is chosen).
+        Returns the loss value (in this case the sum of squared errors (SSE) is chosen).
         """
-        return nn.MSELoss()
+        return nn.MSELoss(reduction='sum')
 
     def loss_jacobian(self, loss):
         """
@@ -192,7 +193,7 @@ class SyLaNet(nn.Module):
 
     def trainLBFGS_iteration(self, optimizer, data, target, regObj, gamma_val):
         """
-        Performs a single optimization step (LBFGS). Returns the training error (MSE).
+        Performs a single optimization step (LBFGS). Returns the training error (SSE).
 
         :param optimizer: Specifices the applied optimizer (from torch.optim)
         :type optimizer: object
@@ -207,7 +208,7 @@ class SyLaNet(nn.Module):
         :param current\_epoch: Current epoch of the training
         :type current\_epoch: int
 
-        :return: Training losses (MSE + regularization loss and only MSE)
+        :return: Training losses (SSE + regularization loss and only SSE)
         :rtype: Tensor (with one element)
         """
         train_loss = 0.
@@ -219,34 +220,34 @@ class SyLaNet(nn.Module):
             """
             optimizer.zero_grad()
             output = self(data)
-            MSE_loss = criterion(output, target)
+            SSE_loss = criterion(output, target)
             reg_loss = regObj(self.get_weights_tensor(), self.lmb_reg, self.approx_eps, gamma_val)
             
             # Bayesian regularization computation
             if self.chooseBR is True:
                 # calculate current loss and apply backpropagation
-                if torch.is_tensor(self.beta_MSE):
-                    self.beta_MSE = self.beta_MSE.item()
+                if torch.is_tensor(self.beta_SSE):
+                    self.beta_SSE = self.beta_SSE.item()
                 if torch.is_tensor(self.alpha_reg):
                     self.alpha_reg = self.alpha_reg.item()
-                loss = self.beta_MSE*MSE_loss + self.alpha_reg*reg_loss
-                # print(self.beta_MSE)
-                # loss = MSE_loss + reg_loss
+                loss = self.beta_SSE*SSE_loss + self.alpha_reg*reg_loss
+                # print(self.beta_SSE)
+                # loss = SSE_loss + reg_loss
                 loss.backward()
                 return loss
 
             # regular SyLaNN training when BR is off
             elif self.chooseBR is False:
                 # calculate current loss and apply backpropagation
-                loss = MSE_loss + reg_loss
+                loss = SSE_loss + reg_loss
                 loss.backward()
                 return loss
             
         train_loss = optimizer.step(closure)
         output_plot = self(data)
-        MSE_loss_plot = criterion(output_plot, target)
+        SSE_loss_plot = criterion(output_plot, target)
         reg_loss = regObj(self.get_weights_tensor(), self.lmb_reg, self.approx_eps, gamma_val)
-        return train_loss, MSE_loss_plot, reg_loss
+        return train_loss, SSE_loss_plot, reg_loss
 
     def train(self, generatedDatasets_dict, trainConfig_dict, gamma_val=0.5):
         """
@@ -263,10 +264,8 @@ class SyLaNet(nn.Module):
         :return: Dictionary with results of the simulation
         :rtype: dict
         """
-        train_loss_list = []          # Total loss (MSE + regularization)
-        train_loss_onlyMSE_list = [] # only MSE loss without regularization
-        err_list = []         # MSE
-        reg_list = []
+        train_loss_list = []          # Total loss (SSE + regularization)
+        train_loss_onlySSE_list = [] # only SSE loss without regularization
         err_test_list = []
         n_epochs1 = int(trainConfig_dict['trainEpochs1']) # int((1 / 4) * epochs)
         n_epochs2 = int(trainConfig_dict['trainEpochs2']) # int((19 / 20) * epochs)
@@ -275,11 +274,11 @@ class SyLaNet(nn.Module):
         self.approx_eps = trainConfig_dict['regApprox_threshold'] # penalty approximation threshold
 
         self.chooseBR = trainConfig_dict['chooseBR']
-        self.beta_MSE = trainConfig_dict['error_data_factor']
+        self.beta_SSE = trainConfig_dict['error_data_factor']
         self.alpha_reg = trainConfig_dict['error_reg_factor']
         self.updateBR_everyNepoch = trainConfig_dict['updateBRparams_every_n_epoch']
         if self.chooseBR is False: # in order to avoid wrong prefactor values when BR is off
-            assert self.beta_MSE == 1, "Please set beta MSE prefactor to one, if Bayesian regularization is not used."
+            assert self.beta_SSE == 1, "Please set beta SSE prefactor to one, if Bayesian regularization is not used."
             assert self.alpha_reg == 1, "Please set alpha reg prefactor to one, if Bayesian regularization is not used."
 
         err_test_final = []
@@ -308,18 +307,18 @@ class SyLaNet(nn.Module):
                 optimizer = torch.optim.LBFGS(self.parameters(), lr=self.learning_rate)
 
                 for epo in range(n_epochs1):
-                    train_loss, MSE_loss, reg_loss = self.trainLBFGS_iteration(optimizer, data, target, regObj1, gamma_val)
-                    train_loss_onlyMSE_val = MSE_loss.item()
+                    train_loss, SSE_loss, reg_loss = self.trainLBFGS_iteration(optimizer, data, target, regObj1, gamma_val)
+                    train_loss_onlySSE_val = SSE_loss.item()
                     train_loss_val = train_loss.item()
-                    train_loss_onlyMSE_list.append(train_loss_onlyMSE_val)
+                    train_loss_onlySSE_list.append(train_loss_onlySSE_val)
                     train_loss_list.append(train_loss_val)
 
                     # update prefactors every n-th epoch
                     if (epo != 0) and ((epo % self.updateBR_everyNepoch) == 0):
                         squared_loss = (self(data) - target).pow(2)
-                        hessian_MSE = self.loss_hessian(squared_loss)
+                        hessian_SSE = self.loss_hessian(squared_loss)
                         hessian_penalty = regObj1.calculate_hessian(self.get_weights_tensor(), self.approx_eps, gamma_val)
-                        hessian_total = self.beta_MSE*hessian_MSE+self.alpha_reg*hessian_penalty
+                        hessian_total = self.beta_SSE*hessian_SSE+self.alpha_reg*hessian_penalty
                         H_pinv = torch.linalg.pinv(hessian_total)
                         tr_Hinv = torch.trace(H_pinv)
                         N_p = sum(p.numel() for p in self.parameters()) # data.size(dim=1) # TODO add number of parameters somewhere as self.something?
@@ -328,34 +327,34 @@ class SyLaNet(nn.Module):
                         # update prefactors
                         E_D = squared_loss.sum() # sum of squared errors
                         self.alpha_reg = N_eff / (2*E_D.item())
-                        E_W = reg_loss / self.lmb_reg # sum of squared weights
-                        self.beta_MSE = (N_D - N_eff) / (2*E_W.item())
+                        E_W = reg_loss # sum of squared weights
+                        self.beta_SSE = (N_D - N_eff) / (2*E_W.item())
 
                     with torch.no_grad():
                         test_outputs = self(test_data)
-                        test_loss = nn.functional.mse_loss(test_outputs, test_target)
+                        test_loss = nn.functional.mse_loss(test_outputs, test_target, reduction='sum') # SSE
                         err_test_val = test_loss.item()
                         err_test_list.append(err_test_val)
 
                     print("Epoch: %d\tTotal training loss: %f\tTest error: %f" % (epo, train_loss_val, err_test_val))
 
-                    if np.isnan(train_loss_val) or train_loss_val > 1000:  # If loss goes to NaN, restart training
+                    if np.isnan(train_loss_val): #  or train_loss_val > 1000:  # If loss goes to NaN, restart training
                         break
 
                 for epo in range(n_epochs1, n_epochs2):
-                    train_loss, MSE_loss, reg_loss = self.trainLBFGS_iteration(optimizer, data, target, regObj2, gamma_val)
-                    train_loss_onlyMSE_val = MSE_loss.item()
+                    train_loss, SSE_loss, reg_loss = self.trainLBFGS_iteration(optimizer, data, target, regObj2, gamma_val)
+                    train_loss_onlySSE_val = SSE_loss.item()
                     train_loss_val = train_loss.item()
-                    train_loss_onlyMSE_list.append(train_loss_onlyMSE_val)
+                    train_loss_onlySSE_list.append(train_loss_onlySSE_val)
                     train_loss_list.append(train_loss_val)
 
                     # update prefactors every n-th epoch
                     # update prefactors every n-th epoch
                     if (epo != 0) and ((epo % self.updateBR_everyNepoch) == 0):
                         squared_loss = (self(data) - target).pow(2)
-                        hessian_MSE = self.loss_hessian(squared_loss)
+                        hessian_SSE = self.loss_hessian(squared_loss)
                         hessian_penalty = regObj2.calculate_hessian(self.get_weights_tensor(), self.approx_eps, gamma_val)
-                        hessian_total = self.beta_MSE*hessian_MSE+self.alpha_reg*hessian_penalty
+                        hessian_total = self.beta_SSE*hessian_SSE+self.alpha_reg*hessian_penalty
                         H_pinv = torch.linalg.pinv(hessian_total)
                         tr_Hinv = torch.trace(H_pinv)
                         N_p = sum(p.numel() for p in self.parameters()) # data.size(dim=1) # TODO add number of parameters somewhere as self.something?
@@ -364,33 +363,33 @@ class SyLaNet(nn.Module):
                         # update prefactors
                         E_D = squared_loss.sum() # sum of squared errors
                         self.alpha_reg = N_eff / (2*E_D.item())
-                        E_W = reg_loss / self.lmb_reg # sum of squared weights
-                        self.beta_MSE = (N_D - N_eff) / (2*E_W.item())
+                        E_W = reg_loss # sum of squared weights
+                        self.beta_SSE = (N_D - N_eff) / (2*E_W.item())
 
                     with torch.no_grad():  # test error
                         test_outputs = self(test_data)
-                        test_loss = nn.functional.mse_loss(test_outputs, test_target)
+                        test_loss = nn.functional.mse_loss(test_outputs, test_target, reduction='sum') # SSE
                         err_test_val = test_loss.item()
                         err_test_list.append(err_test_val)
 
                     print("Epoch: %d\tTotal training loss: %f\tTest error: %f" % (epo, train_loss_val, err_test_val))
 
-                    if np.isnan(train_loss_val) or train_loss_val > 1000:  # If loss goes to NaN, restart training
+                    if np.isnan(train_loss_val): #  or train_loss_val > 1000:  # If loss goes to NaN, restart training
                         break
 
                 for epo in range(n_epochs2, n_epochs3+1):
-                    train_loss, MSE_loss, reg_loss = self.trainLBFGS_iteration(optimizer, data, target, regObj3, gamma_val)
-                    train_loss_onlyMSE_val = MSE_loss.item()
+                    train_loss, SSE_loss, reg_loss = self.trainLBFGS_iteration(optimizer, data, target, regObj3, gamma_val)
+                    train_loss_onlySSE_val = SSE_loss.item()
                     train_loss_val = train_loss.item()
-                    train_loss_onlyMSE_list.append(train_loss_onlyMSE_val)
+                    train_loss_onlySSE_list.append(train_loss_onlySSE_val)
                     train_loss_list.append(train_loss_val)
 
                     # update prefactors every n-th epoch
                     if (epo != 0) and ((epo % self.updateBR_everyNepoch) == 0):
                         squared_loss = (self(data) - target).pow(2)
-                        hessian_MSE = self.loss_hessian(squared_loss)
+                        hessian_SSE = self.loss_hessian(squared_loss)
                         hessian_penalty = regObj3.calculate_hessian(self.get_weights_tensor(), self.approx_eps, gamma_val)
-                        hessian_total = self.beta_MSE*hessian_MSE+self.alpha_reg*hessian_penalty
+                        hessian_total = self.beta_SSE*hessian_SSE+self.alpha_reg*hessian_penalty
                         H_pinv = torch.linalg.pinv(hessian_total)
                         tr_Hinv = torch.trace(H_pinv)
                         N_p = sum(p.numel() for p in self.parameters()) # data.size(dim=1) # TODO add number of parameters somewhere as self.something?
@@ -399,18 +398,18 @@ class SyLaNet(nn.Module):
                         # update prefactors
                         E_D = squared_loss.sum() # sum of squared errors
                         self.alpha_reg = N_eff / (2*E_D.item())
-                        E_W = reg_loss / self.lmb_reg # sum of squared weights
-                        self.beta_MSE = (N_D - N_eff) / (2*E_W.item())
+                        E_W = reg_loss # sum of squared weights
+                        self.beta_SSE = (N_D - N_eff) / (2*E_W.item())
 
                     with torch.no_grad():
                         test_outputs = self(test_data)
-                        test_loss = nn.functional.mse_loss(test_outputs, test_target)
+                        test_loss = nn.functional.mse_loss(test_outputs, test_target, reduction='sum') # SSE
                         err_test_val = test_loss.item()
                         err_test_list.append(err_test_val)
 
                     print("Epoch: %d\tTotal training loss: %f\tTest error: %f" % (epo, train_loss_val, err_test_val))
 
-                    if np.isnan(train_loss_val) or train_loss_val > 1000:  # If loss goes to NaN, restart training
+                    if np.isnan(train_loss_val): #  or train_loss_val > 1000:  # If loss goes to NaN, restart training
                         break
                         
 
@@ -427,26 +426,26 @@ class SyLaNet(nn.Module):
                     # forward pass
                     outputs = self(data)
                     criterion = self.loss()
-                    MSE_loss = criterion(outputs, target)
+                    SSE_loss = criterion(outputs, target)
                     reg_loss = self.reg_term(regObj, self.get_weights_tensor(), self.lmb_reg, self.approx_eps)
-                    train_loss = MSE_loss + reg_loss
+                    train_loss = SSE_loss + reg_loss
                     train_loss.backward()
                     optimizer.step()
 
-                    train_loss_onlyMSE_val = MSE_loss.item()
+                    train_loss_onlySSE_val = SSE_loss.item()
                     train_loss_val = train_loss.item()
-                    train_loss_onlyMSE_list.append(train_loss_onlyMSE_val)
+                    train_loss_onlySSE_list.append(train_loss_onlySSE_val)
                     train_loss_list.append(train_loss_val)
 
                     with torch.no_grad():  # test error
                         test_outputs = self(test_data)
-                        test_loss = nn.functional.mse_loss(test_outputs, test_target)
+                        test_loss = nn.functional.mse_loss(test_outputs, test_target, reduction='sum')
                         err_test_val = test_loss.item()
                         err_test_list.append(err_test_val)
 
                     print("Epoch: %d\tTotal training loss: %f\tTest error: %f" % (epo, train_loss_val, err_test_val))
 
-                    if np.isnan(train_loss_val) or train_loss_val > 1000:  # If loss goes to NaN, restart training
+                    if np.isnan(train_loss_val): #  or train_loss_val > 1000:  # If loss goes to NaN, restart training
                         break
 
                 # second training part
@@ -455,20 +454,20 @@ class SyLaNet(nn.Module):
                     optimizer.zero_grad() # sets gradients of all optimized tensors to zero
                     outputs = self(data) # forward pass
                     criterion = self.loss()
-                    MSE_loss = criterion(outputs, target)
+                    SSE_loss = criterion(outputs, target)
                     reg_loss = self.reg_term(regObj, self.get_weights_tensor(), self.lmb_reg, self.approx_eps)
-                    train_loss = MSE_loss + reg_loss
+                    train_loss = SSE_loss + reg_loss
                     train_loss.backward()
                     optimizer.step()
                     
-                    train_loss_onlyMSE_val = MSE_loss.item()
+                    train_loss_onlySSE_val = SSE_loss.item()
                     train_loss_val = train_loss.item()
-                    train_loss_onlyMSE_list.append(train_loss_onlyMSE_val)
+                    train_loss_onlySSE_list.append(train_loss_onlySSE_val)
                     train_loss_list.append(train_loss_val)
 
                     with torch.no_grad():  # test error
                         test_outputs = self(test_data)
-                        test_loss = nn.functional.mse_loss(test_outputs, test_target)
+                        test_loss = nn.functional.mse_loss(test_outputs, test_target, reduction='sum')
                         err_test_val = test_loss.item()
                         err_test_list.append(err_test_val)
 
@@ -483,20 +482,20 @@ class SyLaNet(nn.Module):
                     optimizer.zero_grad() # sets gradients of all optimized tensors to zero
                     outputs = self(data) # forward pass
                     criterion = self.loss()
-                    MSE_loss = criterion(outputs, target)
+                    SSE_loss = criterion(outputs, target)
                     reg_loss = self.reg_term(regObj, self.get_weights_tensor(), self.lmb_reg, self.approx_eps)
-                    train_loss = MSE_loss + reg_loss
+                    train_loss = SSE_loss + reg_loss
                     train_loss.backward()
                     optimizer.step()
                     
-                    train_loss_onlyMSE_val = MSE_loss.item()
+                    train_loss_onlySSE_val = SSE_loss.item()
                     train_loss_val = train_loss.item()
-                    train_loss_onlyMSE_list.append(train_loss_onlyMSE_val)
+                    train_loss_onlySSE_list.append(train_loss_onlySSE_val)
                     train_loss_list.append(train_loss_val)
 
                     with torch.no_grad():  # test error
                         test_outputs = self(test_data)
-                        test_loss = nn.functional.mse_loss(test_outputs, test_target)
+                        test_loss = nn.functional.mse_loss(test_outputs, test_target, reduction='sum')
                         err_test_val = test_loss.item()
                         err_test_list.append(err_test_val)
 
@@ -531,7 +530,7 @@ class SyLaNet(nn.Module):
             'elasticNet_L1ratio' : gamma_val,
             'simulation_time' : total_time,
             'training_loss' : train_loss_list,
-            'training_onlyMSE_loss' : train_loss_onlyMSE_list,
+            'training_onlySSE_loss' : train_loss_onlySSE_list,
             'testing_loss' : err_test_list
         }
         return result_dict

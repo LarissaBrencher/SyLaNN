@@ -59,15 +59,15 @@ def readDictionaries():
     # BR's init alpha, beta according to Bayesian regularization paper
     trainConfig_dict = {
         'variables_str' : ['x', 'y', 'z'], # ['C'],
-        'loop1Reg' : 'ElasticNetapprox', # None, # warm-up phase
-        'loop2Reg' : 'ElasticNetapprox', # 'L12approx',
-        'loop3Reg' : 'ElasticNetapprox', # 'L12approx',
+        'loop1Reg' : 'L12approx', # 'ElasticNetapprox', # None, # warm-up phase
+        'loop2Reg' : 'L12approx', # 'ElasticNetapprox', # 'L12approx',
+        'loop3Reg' : 'L12approx', # 'ElasticNetapprox', # 'L12approx',
         'regApprox_threshold': 0.01,
         'learning_rate' : 0.01,
         'regularization_weight' : 0.001,
         'trainEpochs1' : 5,
         'trainEpochs2' : 20,
-        'trainEpochs3' : 50,
+        'trainEpochs3' : 100,
         'optimizer' : 'LBFGS',
         'chooseBR' : True, # choose whether Bayesian regularization (BR) is desired during training
         'error_data_factor' : 1, # choose initial value of BR's prefactor for data error
