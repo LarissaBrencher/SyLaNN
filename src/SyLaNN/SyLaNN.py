@@ -11,6 +11,7 @@ import mathOperators as ops
 import time
 import eq_print
 from penalty import Penalty
+# import copy
 
 
 class SymLayer(nn.Module):
@@ -87,16 +88,16 @@ class SymLayer(nn.Module):
         return self.W.clone()
 
 
-class SLNet(nn.Module):
+class SyLaNet(nn.Module):
     """
-    Definition of the Symbolic-Layered Neural Network (SLNN) architecture,
+    Definition of the Symbolic-Layered Neural Network (SyLaNN) architecture,
     inherits from PyTorch's nn.Module.
     """
     def __init__(self, n_hiddenLayers=2, fcts=ops.default_func, init_W=None, data_dim=1):
         """
         Constructor method
 
-        :param n_hiddenLayers: Number of hidden layers of the SLNN (depth), default 2
+        :param n_hiddenLayers: Number of hidden layers of the SyLaNN (depth), default 2
         :type n_hiddenLayers: int
         :param fcts: Activation functions per layer, default ops.default_func
         :type fcts: list\[objects\]
@@ -105,7 +106,7 @@ class SLNet(nn.Module):
         :param data_dim: Number of variables from the given input data, default 1
         :type data_dim: int
         """
-        super(SLNet, self).__init__()
+        super(SyLaNet, self).__init__()
 
         self.depth = n_hiddenLayers
         self.fcts = fcts
@@ -127,7 +128,7 @@ class SLNet(nn.Module):
         :param input: Initial data from the input layer
         :type input: Tensor
 
-        :return: Result of the SLNN's forward propagation
+        :return: Result of the SyLaNN's forward propagation
         :rtype: Tensor
         """
         h = self.hidden_layers(input)
@@ -165,6 +166,7 @@ class SLNet(nn.Module):
         """
         n_samples = loss.size(dim=0)
         jacobian = []
+        # current_params_copy = copy.deepcopy(self)
         for sample_i in range(n_samples):
             grad_tmp = torch.autograd.grad(loss[sample_i], self.parameters(), retain_graph=True)
             grad_tmp = torch.nn.utils.parameters_to_vector(grad_tmp)
@@ -188,7 +190,7 @@ class SLNet(nn.Module):
         hessian_approx = torch.matmul(jacobian_T, jacobian) # size: numWeights x numWeights
         return hessian_approx
 
-    def trainLBFGS_iteration(self, optimizer, data, target, regObj, gamma_val, current_epoch):
+    def trainLBFGS_iteration(self, optimizer, data, target, regObj, gamma_val):
         """
         Performs a single optimization step (LBFGS). Returns the training error (MSE).
 
@@ -222,21 +224,14 @@ class SLNet(nn.Module):
             
             # Bayesian regularization computation
             if self.chooseBR is True:
-                # update prefactors every n-th epoch
-                if (current_epoch != 0) and ((current_epoch % self.updateBR_everyNepoch) == 0):
-                    squared_loss = (self(data) - target).pow(2)
-                    hessian_MSE = self.loss_hessian(squared_loss)
-                    hessian_penalty = regObj.calculate_hessian(self.get_weights_tensor(), self.approx_eps, gamma_val)
-                    H_pinv = torch.linalg.pinv(hessian_MSE+hessian_penalty)
-                    tr_Hinv = torch.trace(H_pinv)
-                    N_p = data.size(dim=1) # TODO add number of parameters somewhere as self.something?
-                    N_eff = N_p - self.alpha_reg * tr_Hinv
-                    N_D = data.size(dim=0)
-                    # update prefactors
-                    self.alpha_reg = N_eff / (2*MSE_loss)
-                    self.beta_MSE = (N_D - N_eff) / (2*reg_loss)
                 # calculate current loss and apply backpropagation
+                if torch.is_tensor(self.beta_MSE):
+                    self.beta_MSE = self.beta_MSE.item()
+                if torch.is_tensor(self.alpha_reg):
+                    self.alpha_reg = self.alpha_reg.item()
                 loss = self.beta_MSE*MSE_loss + self.alpha_reg*reg_loss
+                # print(self.beta_MSE)
+                # loss = MSE_loss + reg_loss
                 loss.backward()
                 return loss
 
@@ -250,7 +245,8 @@ class SLNet(nn.Module):
         train_loss = optimizer.step(closure)
         output_plot = self(data)
         MSE_loss_plot = criterion(output_plot, target)
-        return train_loss, MSE_loss_plot
+        reg_loss = regObj(self.get_weights_tensor(), self.lmb_reg, self.approx_eps, gamma_val)
+        return train_loss, MSE_loss_plot, reg_loss
 
     def train(self, generatedDatasets_dict, trainConfig_dict, gamma_val=0.5):
         """
@@ -312,11 +308,28 @@ class SLNet(nn.Module):
                 optimizer = torch.optim.LBFGS(self.parameters(), lr=self.learning_rate)
 
                 for epo in range(n_epochs1):
-                    train_loss, MSE_plot = self.trainLBFGS_iteration(optimizer, data, target, regObj1, gamma_val, epo)
-                    train_loss_onlyMSE_val = MSE_plot.item()
+                    train_loss, MSE_loss, reg_loss = self.trainLBFGS_iteration(optimizer, data, target, regObj1, gamma_val)
+                    train_loss_onlyMSE_val = MSE_loss.item()
                     train_loss_val = train_loss.item()
                     train_loss_onlyMSE_list.append(train_loss_onlyMSE_val)
                     train_loss_list.append(train_loss_val)
+
+                    # update prefactors every n-th epoch
+                    if (epo != 0) and ((epo % self.updateBR_everyNepoch) == 0):
+                        squared_loss = (self(data) - target).pow(2)
+                        hessian_MSE = self.loss_hessian(squared_loss)
+                        hessian_penalty = regObj1.calculate_hessian(self.get_weights_tensor(), self.approx_eps, gamma_val)
+                        hessian_total = self.beta_MSE*hessian_MSE+self.alpha_reg*hessian_penalty
+                        H_pinv = torch.linalg.pinv(hessian_total)
+                        tr_Hinv = torch.trace(H_pinv)
+                        N_p = sum(p.numel() for p in self.parameters()) # data.size(dim=1) # TODO add number of parameters somewhere as self.something?
+                        N_eff = N_p - self.alpha_reg * tr_Hinv.item()
+                        N_D = data.size(dim=0)
+                        # update prefactors
+                        E_D = squared_loss.sum() # sum of squared errors
+                        self.alpha_reg = N_eff / (2*E_D.item())
+                        E_W = reg_loss / self.lmb_reg # sum of squared weights
+                        self.beta_MSE = (N_D - N_eff) / (2*E_W.item())
 
                     with torch.no_grad():
                         test_outputs = self(test_data)
@@ -330,11 +343,28 @@ class SLNet(nn.Module):
                         break
 
                 for epo in range(n_epochs1, n_epochs2):
-                    train_loss, MSE_plot = self.trainLBFGS_iteration(optimizer, data, target, regObj2, gamma_val, epo)
-                    train_loss_onlyMSE_val = MSE_plot.item()
+                    train_loss, MSE_loss, reg_loss = self.trainLBFGS_iteration(optimizer, data, target, regObj2, gamma_val)
+                    train_loss_onlyMSE_val = MSE_loss.item()
                     train_loss_val = train_loss.item()
                     train_loss_onlyMSE_list.append(train_loss_onlyMSE_val)
                     train_loss_list.append(train_loss_val)
+
+                    # update prefactors every n-th epoch
+                    if (epo != 0) and ((epo % self.updateBR_everyNepoch) == 0):
+                        squared_loss = (self(data) - target).pow(2)
+                        hessian_MSE = self.loss_hessian(squared_loss)
+                        hessian_penalty = regObj2.calculate_hessian(self.get_weights_tensor(), self.approx_eps, gamma_val)
+                        hessian_total = self.beta_MSE*hessian_MSE+self.alpha_reg*hessian_penalty
+                        H_pinv = torch.linalg.pinv(hessian_total)
+                        tr_Hinv = torch.trace(H_pinv)
+                        N_p = sum(p.numel() for p in self.parameters()) # data.size(dim=1) # TODO add number of parameters somewhere as self.something?
+                        N_eff = N_p - self.alpha_reg * tr_Hinv.item()
+                        N_D = data.size(dim=0)
+                        # update prefactors
+                        E_D = squared_loss.sum() # sum of squared errors
+                        self.alpha_reg = N_eff / (2*E_D.item())
+                        E_W = reg_loss / self.lmb_reg # sum of squared weights
+                        self.beta_MSE = (N_D - N_eff) / (2*E_W.item())
 
                     with torch.no_grad():  # test error
                         test_outputs = self(test_data)
@@ -348,11 +378,28 @@ class SLNet(nn.Module):
                         break
 
                 for epo in range(n_epochs2, n_epochs3+1):
-                    train_loss, MSE_plot = self.trainLBFGS_iteration(optimizer, data, target, regObj3, gamma_val, epo)
-                    train_loss_onlyMSE_val = MSE_plot.item()
+                    train_loss, MSE_loss, reg_loss = self.trainLBFGS_iteration(optimizer, data, target, regObj3, gamma_val)
+                    train_loss_onlyMSE_val = MSE_loss.item()
                     train_loss_val = train_loss.item()
                     train_loss_onlyMSE_list.append(train_loss_onlyMSE_val)
                     train_loss_list.append(train_loss_val)
+
+                    # update prefactors every n-th epoch
+                    if (epo != 0) and ((epo % self.updateBR_everyNepoch) == 0):
+                        squared_loss = (self(data) - target).pow(2)
+                        hessian_MSE = self.loss_hessian(squared_loss)
+                        hessian_penalty = regObj3.calculate_hessian(self.get_weights_tensor(), self.approx_eps, gamma_val)
+                        hessian_total = self.beta_MSE*hessian_MSE+self.alpha_reg*hessian_penalty
+                        H_pinv = torch.linalg.pinv(hessian_total)
+                        tr_Hinv = torch.trace(H_pinv)
+                        N_p = sum(p.numel() for p in self.parameters()) # data.size(dim=1) # TODO add number of parameters somewhere as self.something?
+                        N_eff = N_p - self.alpha_reg * tr_Hinv.item()
+                        N_D = data.size(dim=0)
+                        # update prefactors
+                        E_D = squared_loss.sum() # sum of squared errors
+                        self.alpha_reg = N_eff / (2*E_D.item())
+                        E_W = reg_loss / self.lmb_reg # sum of squared weights
+                        self.beta_MSE = (N_D - N_eff) / (2*E_W.item())
 
                     with torch.no_grad():
                         test_outputs = self(test_data)
