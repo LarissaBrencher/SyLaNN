@@ -48,12 +48,12 @@ if __name__ == "__main__":
 
         # generate data, if no dataset is given
         manageData_obj = dm.DataManager()
-        data_file_name = "2022-06-14_data_LangmuirIsotherm.json"
+        data_file_name = "2022-06-20_data_LangmuirIsotherm.json"
         loadedDatasets_withConfigs = manageData_obj.loadDataset(load_folder_path, data_file_name)
         n_params = loadedDatasets_withConfigs['x_dim']
 
         # create Symbolic-Layered Neural Network (short SyLaNN)
-        mySyLaNN = SyLaNN.SLNet(n_hiddenLayers=net_dict['n_hidden'], fcts=net_dict['symbolic_layer'], data_dim=n_params)
+        mySyLaNN = SyLaNN.SyLaNet(n_hiddenLayers=net_dict['n_hidden'], fcts=net_dict['symbolic_layer'], data_dim=n_params)
 
         # training of network with given data (generated or loaded and formatted previously)
         # and save to file in corresponding folder (encoded with date and time when simulation started)

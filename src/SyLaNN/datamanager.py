@@ -46,7 +46,7 @@ class DataManager():
         # std_train = 1
         # for specific mean, std: (range_min_train - mean_train) / std_train, (range_max_train - mean_train) / std_train
         a_train, b_train = range_min_train, range_max_train
-        inputX_train = torch.tensor(truncnorm.rvs(a_train, b_train, size=[generateData_dict['n_train'], x_dim]))
+        inputX_train = torch.from_numpy(truncnorm.rvs(a_train, b_train, size=[generateData_dict['n_train'], x_dim]))
         outputY_train = torch.tensor([[ref_fct(*x_i)] for x_i in inputX_train])
         # create testing data
         range_min_test = generateData_dict['domain_test'][0]
@@ -58,7 +58,7 @@ class DataManager():
         # std_test = 1 
         # for specific mean, std: (range_min_test - mean_test) / std_test, (range_max_test - mean_test) / std_test
         a_test, b_test = range_min_test, range_max_test
-        inputX_test = torch.tensor(truncnorm.rvs(a_test, b_test, size=[generateData_dict['n_test'], x_dim]))
+        inputX_test = torch.from_numpy(truncnorm.rvs(a_test, b_test, size=[generateData_dict['n_test'], x_dim]))
         outputY_test = torch.tensor([[ref_fct(*x_i)] for x_i in inputX_test])
         # write generated data sets into dictionary
         dataset_dict = {
