@@ -38,6 +38,7 @@ def readDictionaries():
     # for creating the neural network structure
     net_dict = {
         'n_hidden' : 2,
+        'checkDivLayer' : True,
         'symbolic_layer' : [
                             *[ops.Constant()] * 2,
                             *[ops.Identity()] * 4,
@@ -51,6 +52,12 @@ def readDictionaries():
                             'Sq', 'Sq', 'Sq', 'Sq',
                             'Exp', 'Exp',
                             'Prod', 'Prod'
+                            ],
+        'symbolic_layer_div' : [
+                            *[ops.Quotient()] * 2
+                            ],
+        'symbolic_layer_str_div' : [
+                            'Quot', 'Quot'
                             ]
     }
 
