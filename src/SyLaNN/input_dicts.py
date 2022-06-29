@@ -31,7 +31,7 @@ def readDictionaries():
         'n_test' : 1000,
         'domain_train' : [0.25, 0.75],
         'domain_test' : [0, 1],
-        'ref_fct_str' : 'lambda x : x + 8', # 'lambda C : 0.00059 * (1*C) / (1 + 1*C)', # k=1 q_max = 5.9e-4
+        'ref_fct_str' : 'lambda C : 0.00059 * (1*C) / (1 + 1*C)', # k=1 q_max = 5.9e-4
         'saveFile_name' : "_LinearMiniTest"
     }
 
@@ -59,9 +59,9 @@ def readDictionaries():
     # BR's init alpha, beta according to Bayesian regularization paper
     trainConfig_dict = {
         'variables_str' : ['x', 'y', 'z'], # ['C'],
-        'loop1Reg' : 'L12approx', # 'ElasticNetapprox', # None, # warm-up phase
-        'loop2Reg' : 'L12approx', # 'ElasticNetapprox', # 'L12approx',
-        'loop3Reg' : 'L12approx', # 'ElasticNetapprox', # 'L12approx',
+        'loop1Reg' : 'L12approx',#'ElasticNetapprox', # None, # warm-up phase
+        'loop2Reg' : 'L12approx',#'ElasticNetapprox', # 'L12approx',
+        'loop3Reg' : 'L12approx',#'ElasticNetapprox', # 'L12approx',
         'regApprox_threshold': 0.01,
         'learning_rate' : 0.01,
         'regularization_weight' : 0.001,

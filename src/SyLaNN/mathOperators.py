@@ -494,3 +494,7 @@ default_func = [
     *[Exp()] * 4,
     *[Product()] * 2,
 ]
+
+default_divLayer = [
+    *[Quotient()] * 2
+]

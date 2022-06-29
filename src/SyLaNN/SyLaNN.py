@@ -5,6 +5,7 @@ and the definition of the approximated penalty function.
 """
 
 from multiprocessing import reduction
+from tabnanny import check
 import numpy as np
 import torch
 import torch.nn as nn
@@ -17,7 +18,7 @@ from penalty import Penalty
 
 class SymLayer(nn.Module):
     """
-    Definition of the customized layer of the Symbolic-Layered Neural Network (SLNN),
+    Definition of the customized layer of the Symbolic-Layered Neural Network (SyLaNN),
     inherits from PyTorch's nn.Module.
     """
     def __init__(self, fcts=ops.default_func, in_dim=None, init_W=None):
@@ -88,13 +89,81 @@ class SymLayer(nn.Module):
         """
         return self.W.clone()
 
+class DivLayer(nn.Module):
+    """
+    Definition of the Division layer of the Symbolic-Layered Neural Network (SyLaNN),
+    inherits from PyTorch's nn.Module. This is an alternative option for the output layer.
+    The structure of this class is kept similar to the customized symbolic layer.
+    """
+    def __init__(self, fcts=ops.default_divLayer, in_dim=None, init_W=None):
+        """
+        Constructor method
+
+        :param fcts: Activation functions of the division output layer, default ops.default\_divLayer
+        :type fcts: list\[objects\]
+        :param in_dim: Dimension of input from layer, default None
+        :type in_dim: int
+        :param init_W: Pre-defined weight matrix, default None
+        :type init_W: Tensor
+        """
+        super().__init__()
+        
+        self.output = None
+        self.init_W = init_W
+        self.W = None
+        self.out_dim = 1 # here fixed because division only happens in last layer
+        self.n_fcts = len(fcts)
+        self.fcts = [fct.torch for fct in fcts]
+
+        if init_W is None:
+            self.W = nn.Parameter(torch.normal(mean=0.0, std=0.1, size=(in_dim, self.out_dim)))
+        else:
+            self.W = nn.Parameter(self.init_W.clone().detach())
+
+    def forward(self, x):
+        """
+        Applies the forward propagation method for the division layer.
+
+        :param x: Input from previous layer
+        :type x: Tensor
+
+        :return: Input for next layer
+        :rtype: Tensor
+        """
+        g = torch.matmul(x, self.W)
+        self.output = []
+
+        in_i = 0
+        out_i = 0
+        # only division (binary operator)
+        while out_i < self.n_fcts:
+            self.output.append(self.fcts[out_i](g[:, in_i], g[:, in_i+1]))
+            in_i += 2
+            out_i += 1
+
+        self.output = torch.stack(self.output, dim=1)
+
+        return self.output
+
+    def get_weight(self):
+        """
+        Returns the weight matrix as NumPy array.
+        """
+        return self.W.cpu().detach().numpy()
+
+    def get_weight_tensor(self):
+        """
+        Returns the weight matrix as PyTorch tensor.
+        """
+        return self.W.clone()
+
 
 class SyLaNet(nn.Module):
     """
     Definition of the Symbolic-Layered Neural Network (SyLaNN) architecture,
     inherits from PyTorch's nn.Module.
     """
-    def __init__(self, n_hiddenLayers=2, fcts=ops.default_func, init_W=None, data_dim=1):
+    def __init__(self, n_hiddenLayers=2, fcts=ops.default_func, init_W=None, data_dim=1, checkDivLayer=False, fctsDiv=ops.default_divLayer):
         """
         Constructor method
 
@@ -106,25 +175,46 @@ class SyLaNet(nn.Module):
         :type init_W: Tensor
         :param data_dim: Number of variables from the given input data, default 1
         :type data_dim: int
+        :param checkDivLayer: Selection whether an additional division operator layer before the final output is desired
+        :type checkDivLayer: boolean
+        :param fctsDiv: Activation functions of division layer (last layer before final output)
         """
         super(SyLaNet, self).__init__()
 
-        self.depth = n_hiddenLayers
-        self.fcts = fcts
-        layer_in_dim = [data_dim] + self.depth*[len(self.fcts)]
+        if checkDivLayer is False:
+            self.depth = n_hiddenLayers
+            self.fcts = fcts
+            self.fctsDiv = None
+            layer_in_dim = [data_dim] + self.depth*[len(self.fcts)]
 
-        if init_W is None:
-            layers = [SymLayer(fcts=fcts, in_dim=layer_in_dim[i]) for i in range(self.depth)]
-            self.output_weight = nn.Parameter(torch.rand((layers[-1].n_fcts, 1)))
-        else:
-            layers = [SymLayer(fcts=fcts, in_dim=layer_in_dim[i], init_W=init_W[i]) for i in range(self.depth)]
-            self.output_weight = nn.Parameter(init_W[-1].clone().detach())
+            if init_W is None:
+                layers = [SymLayer(fcts=fcts, in_dim=layer_in_dim[i]) for i in range(self.depth)]
+                self.output_weight = nn.Parameter(torch.rand((layers[-1].n_fcts, 1)))
+            else:
+                layers = [SymLayer(fcts=fcts, in_dim=layer_in_dim[i], init_W=init_W[i]) for i in range(self.depth)]
+                self.output_weight = nn.Parameter(init_W[-1].clone().detach())
         
-        self.hidden_layers = nn.Sequential(*layers)
+            self.hidden_layers = nn.Sequential(*layers)
+
+        if checkDivLayer is True:
+            self.depth = n_hiddenLayers + 1
+            self.fcts = fcts
+            self.fctsDiv = fctsDiv
+            layer_in_dim = [data_dim] + (self.depth-1)*[len(self.fcts)] + [len(self.fctsDiv)]
+
+            if init_W is None:
+                layers = [SymLayer(fcts=fcts, in_dim=layer_in_dim[i]) for i in range(self.depth-1)] + [DivLayer(fcts=fctsDiv, in_dim=layer_in_dim[-1])]
+                self.output_weight = nn.Parameter(torch.rand((layers[-1].n_fcts, 1)))
+            else:
+                # init_W's structure is assumed to contain the output weights in the last element, therefore second-to-last weights are for the division layer
+                layers = [SymLayer(fcts=fcts, in_dim=layer_in_dim[i], init_W=init_W[i]) for i in range(self.depth-1)] + [DivLayer(fcts=fctsDiv, in_dim=layer_in_dim[-1], init_W=init_W[-2])]
+                self.output_weight = nn.Parameter(init_W[-1].clone().detach())
+        
+            self.hidden_layers = nn.Sequential(*layers)
 
     def forward(self, input):
         """
-        Applies the forward propagation through the whole SLNN.
+        Applies the forward propagation through the whole SyLaNN.
 
         :param input: Initial data from the input layer
         :type input: Tensor
