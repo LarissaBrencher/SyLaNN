@@ -57,6 +57,10 @@ def readDictionaries():
                             *[ops.Quotient()] * 14 # same number of nodes like symbolic layer!
                             ],
         'symbolic_layer_str_div' : [
+                            'Quot', 'Quot', 
+                            'Quot', 'Quot', 'Quot', 'Quot', 
+                            'Quot', 'Quot', 'Quot', 'Quot',
+                            'Quot', 'Quot',
                             'Quot', 'Quot'
                             ]
     }

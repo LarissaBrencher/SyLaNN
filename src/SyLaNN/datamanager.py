@@ -13,6 +13,7 @@ import json
 from sympy import symbols
 from sympy.utilities.lambdify import lambdastr
 from scipy.stats import truncnorm
+import copy
 
 class DataManager():
     """
@@ -187,15 +188,24 @@ class DataManager():
         :type trainConfig\_dict: dict
         :param simulationResults\_dict: Dictionary containing the computed simulation's results which are to be saved.
         """
-        net_dict.pop('symbolic_layer') 
+        # create copies of original dictionaries in order to avoid errors in the elastic net iteration loop
+        generateData_dict_copy = copy.deepcopy(generateData_dict)
+        net_dict_copy = copy.deepcopy(net_dict)
+        trainConfig_dict_copy = copy.deepcopy(trainConfig_dict)
+        simulationResults_dict_copy = copy.deepcopy(simulationResults_dict)
+        # remove list of objects for JSON, corresponding string version in the save file indicates how the hidden layers are structured
+        net_dict_copy.pop('symbolic_layer')
+        net_dict_copy.pop('symbolic_layer_div')
+        # change tensors (training and testing datasets) back to lists for JSON
+        generateData_dict_copy = self.tensor2list(generateData_dict_copy)
         # change sympy function to string (to make it savable for json)
-        found_eq_str = self.sympy2str(simulationResults_dict['found_eq'], trainConfig_dict['variables_str'])
-        simulationResults_dict.update({'found_eq' : found_eq_str})
+        found_eq_str = self.sympy2str(simulationResults_dict_copy['found_eq'], trainConfig_dict_copy['variables_str'])
+        simulationResults_dict_copy.update({'found_eq' : found_eq_str})
         saveFile_dict = {
-            **simulationResults_dict,
-            **generateData_dict, 
-            **net_dict, 
-            **trainConfig_dict
+            **simulationResults_dict_copy,
+            **generateData_dict_copy,
+            **net_dict_copy,
+            **trainConfig_dict_copy
         }
 
         # save dictionary to json file in corresponding simulation folder
