@@ -398,7 +398,7 @@ class Quotient(BaseFunction2):
     A class for the mathematical operator applying the quotient of two inputs.
     Takes BaseFunction2 as an argument.
     """
-    def __init__(self, norm=1.):
+    def __init__(self, norm=0.1):
         """
         Constructor method, inherits from BaseFunction2 with adjusted norm parameter
         
@@ -496,5 +496,5 @@ default_func = [
 ]
 
 default_divLayer = [
-    *[Quotient()] * 2
+    *[Quotient()] * 14
 ]

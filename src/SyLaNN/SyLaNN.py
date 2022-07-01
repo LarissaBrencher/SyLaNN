@@ -39,7 +39,6 @@ class SymLayer(nn.Module):
         self.fcts = [fct.torch for fct in fcts]
         self.n_binary = ops.count_binaryFcts(fcts)
         self.n_unary = self.n_fcts - self.n_binary
-
         self.out_dim = self.n_fcts + self.n_binary
         self.init_W = init_W
         self.W = None
@@ -111,9 +110,11 @@ class DivLayer(nn.Module):
         self.output = None
         self.init_W = init_W
         self.W = None
-        self.out_dim = 1 # here fixed because division only happens in last layer
         self.n_fcts = len(fcts)
         self.fcts = [fct.torch for fct in fcts]
+        self.n_binary = ops.count_binaryFcts(fcts)
+        self.n_unary = self.n_fcts - self.n_binary
+        self.out_dim = self.n_fcts + self.n_binary
 
         if init_W is None:
             self.W = nn.Parameter(torch.normal(mean=0.0, std=0.1, size=(in_dim, self.out_dim)))
@@ -175,13 +176,16 @@ class SyLaNet(nn.Module):
         :type init_W: Tensor
         :param data_dim: Number of variables from the given input data, default 1
         :type data_dim: int
-        :param checkDivLayer: Selection whether an additional division operator layer before the final output is desired
+        :param checkDivLayer: Selection whether an additional division operator layer before the final output is desired, default False
         :type checkDivLayer: boolean
         :param fctsDiv: Activation functions of division layer (last layer before final output)
+        :type fctsDiv: list\[objects\]
         """
         super(SyLaNet, self).__init__()
 
-        if checkDivLayer is False:
+        self.checkDivLayer = checkDivLayer
+
+        if self.checkDivLayer is False:
             self.depth = n_hiddenLayers
             self.fcts = fcts
             self.fctsDiv = None
@@ -196,7 +200,8 @@ class SyLaNet(nn.Module):
         
             self.hidden_layers = nn.Sequential(*layers)
 
-        if checkDivLayer is True:
+        if self.checkDivLayer is True:
+            assert len(fcts) == len(fctsDiv), "Input dimensions (division layer) do not match previous layer's output dimensions."
             self.depth = n_hiddenLayers + 1
             self.fcts = fcts
             self.fctsDiv = fctsDiv
@@ -607,7 +612,13 @@ class SyLaNet(nn.Module):
             n_inputArgs = generatedDatasets_dict['x_dim']
             weights = self.get_weights()
             vars_str = trainConfig_dict['variables_str']
-            expr = eq_print.network(weights, self.fcts, vars_str[:n_inputArgs])
+            fcts = []
+            fcts = self.fcts
+            fcts_div = []
+            if self.checkDivLayer is True:
+                fcts_div = self.fctsDiv
+            # add threshold as input in dictionary settings (for user to decide)
+            expr = eq_print.network(weights, fcts, vars_str[:n_inputArgs], threshold=0.01, checkDivLayer=self.checkDivLayer, fctsDiv=fcts_div)
             print(expr)
 
 

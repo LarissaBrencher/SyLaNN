@@ -54,7 +54,7 @@ def readDictionaries():
                             'Prod', 'Prod'
                             ],
         'symbolic_layer_div' : [
-                            *[ops.Quotient()] * 2
+                            *[ops.Quotient()] * 14 # same number of nodes like symbolic layer!
                             ],
         'symbolic_layer_str_div' : [
                             'Quot', 'Quot'
@@ -74,7 +74,7 @@ def readDictionaries():
         'regularization_weight' : 0.001,
         'trainEpochs1' : 5,
         'trainEpochs2' : 20,
-        'trainEpochs3' : 100,
+        'trainEpochs3' : 28,
         'optimizer' : 'LBFGS',
         'chooseBR' : True, # choose whether Bayesian regularization (BR) is desired during training
         'error_data_factor' : 1, # choose initial value of BR's prefactor for data error
