@@ -62,9 +62,9 @@ def sparsify(M, threshold=0.01):
                 M[i, j] = 0
     return M
 
-def slnn_print(weights, fcts, var_str, threshold=0.01, n_binary=0):
+def slnn_print(weights, fcts, var_str, threshold=0.01, n_binary=0, checkDivLayer=False, fctsDiv=[], n_binary_div=0):
     """
-    Help function in order to generate a readable version of the SLNN structure.
+    Help function in order to generate a readable version of the SyLaNN structure.
 
     :param weights: Weight matrix
     :type weights: list\[numpy array\]
@@ -75,6 +75,12 @@ def slnn_print(weights, fcts, var_str, threshold=0.01, n_binary=0):
     :param threshold: Fixed threshold at which the matrix entries will be set to zero, default 0.01
     :type threshold: float
     :param n\_binary: Number of binary activation functions, i.e. need two inputs, default 0
+    :type n\_binary: int
+    :param checkDivLayer: Selection whether an additional division operator layer before the final output is desired, default False
+    :type checkDivLayer: boolean
+    :param fctsDiv: Activation functions of division layer (last layer before final output), default empty
+    :type fctsDiv: list\[objects\]
+    :param n\_binary: Number of binary activation functions (division layer), i.e. need two inputs, default 0
     :type n\_binary: int
 
     :return: Expression matrix
@@ -87,16 +93,32 @@ def slnn_print(weights, fcts, var_str, threshold=0.01, n_binary=0):
         else:
             vars.append(var)
     eq = sym.Matrix(vars).T
-    for W in weights[:-1]:
-        W = sparsify(sym.Matrix(W), threshold=threshold)
-        eq = eq * W
-        eq = apply_activFcts(eq, fcts, n_binary=n_binary)
-    eq = eq * sparsify(sym.Matrix(weights[-1]))
-    return eq
+    if checkDivLayer is False:
+        for W in weights[:-1]:
+            W = sparsify(sym.Matrix(W), threshold=threshold)
+            eq = eq * W
+            eq = apply_activFcts(eq, fcts, n_binary=n_binary)
+        # output layer
+        eq = eq * sparsify(sym.Matrix(weights[-1]))
+        return eq
+    if checkDivLayer is True:
+        for W in weights[:-2]:
+            W = sparsify(sym.Matrix(W), threshold=threshold)
+            eq = eq * W
+            eq = apply_activFcts(eq, fcts, n_binary=n_binary)
+        # treat division layer separately
+        W_div = sparsify(sym.Matrix(weights[-2]), threshold=threshold)
+        eq = eq * W_div
+        eq = apply_activFcts(eq, fctsDiv, n_binary_div)
+        # output layer
+        eq = eq * sparsify(sym.Matrix(weights[-1]))
+        return eq
 
-def network(weights, fcts, var_str, threshold=0.01):
+
+
+def network(weights, fcts, var_str, threshold=0.01, checkDivLayer=False, fctsDiv=[]):
     """
-    Generates a readable version of the SLNN structure.
+    Generates a readable version of the SyLaNN structure.
 
     :param weights: Weight matrix
     :type weights: list\[numpy array\]
@@ -106,12 +128,26 @@ def network(weights, fcts, var_str, threshold=0.01):
     :type var\_str: list\[char\]
     :param threshold: Fixed threshold at which the matrix entries will be set to zero, default 0.01
     :type threshold: float
+    :param checkDivLayer: Selection whether an additional division operator layer before the final output is desired, default False
+    :type checkDivLayer: boolean
+    :param fctsDiv: Activation functions of division layer (last layer before final output), default empty
+    :type fctsDiv: list\[objects\]
 
-    :return: Readable expression of the SLNN's predicted equation
+    :return: Readable expression of the SyLaNN's predicted equation
     :rtype: str
     """
-    n_binary = ops.count_binaryFcts(fcts)
-    fcts = [fct.sp for fct in fcts]
-    eq_slnn = slnn_print(weights, fcts, var_str, threshold=threshold, n_binary=n_binary)
-    found_eq = eq_slnn[0, 0]
-    return found_eq
+    if checkDivLayer is False:
+        n_binary = ops.count_binaryFcts(fcts)
+        fcts = [fct.sp for fct in fcts]
+        eq_slnn = slnn_print(weights, fcts, var_str, threshold=threshold, n_binary=n_binary, checkDivLayer=checkDivLayer)
+        found_eq = eq_slnn[0, 0]
+        return found_eq
+
+    if checkDivLayer is True:
+        n_binary = ops.count_binaryFcts(fcts)
+        fcts = [fct.sp for fct in fcts]
+        n_binary_div = ops.count_binaryFcts(fctsDiv)
+        fcts_div = [fct.sp for fct in fctsDiv]
+        eq_slnn = slnn_print(weights, fcts, var_str, threshold=threshold, n_binary=n_binary, checkDivLayer=checkDivLayer, fctsDiv=fcts_div, n_binary_div=n_binary_div)
+        found_eq = eq_slnn[0, 0]
+        return found_eq
