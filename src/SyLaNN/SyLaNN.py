@@ -617,7 +617,7 @@ class SyLaNet(nn.Module):
             fcts_div = []
             if self.checkDivLayer is True:
                 fcts_div = self.fctsDiv
-            # add threshold as input in dictionary settings (for user to decide)
+            # TODO add threshold as input in dictionary settings (for user to decide)
             expr = eq_print.network(weights, fcts, vars_str[:n_inputArgs], threshold=0.01, checkDivLayer=self.checkDivLayer, fctsDiv=fcts_div)
             print(expr)
 

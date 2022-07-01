@@ -70,9 +70,9 @@ def readDictionaries():
     # BR's init alpha, beta according to Bayesian regularization paper
     trainConfig_dict = {
         'variables_str' : ['x', 'y', 'z'], # ['C'],
-        'loop1Reg' : 'L12approx',#'ElasticNetapprox', # None, # warm-up phase
-        'loop2Reg' : 'L12approx',#'ElasticNetapprox', # 'L12approx',
-        'loop3Reg' : 'L12approx',#'ElasticNetapprox', # 'L12approx',
+        'loop1Reg' : 'ElasticNetapprox', # None, # warm-up phase
+        'loop2Reg' : 'ElasticNetapprox', # 'L12approx',
+        'loop3Reg' : 'ElasticNetapprox', # 'L12approx',
         'regApprox_threshold': 0.01,
         'learning_rate' : 0.01,
         'regularization_weight' : 0.001,
