@@ -53,7 +53,7 @@ if __name__ == "__main__":
         n_params = loadedDatasets_withConfigs['x_dim']
 
         # create Symbolic-Layered Neural Network (short SyLaNN)
-        mySyLaNN = SyLaNN.SyLaNet(n_hiddenLayers=net_dict['n_hidden'], fcts=net_dict['symbolic_layer'], data_dim=n_params, checkDivLayer=net_dict['checkDivLayer'], fctsDiv=net_dict['symbolic_layer_div'])
+        # mySyLaNN = SyLaNN.SyLaNet(n_hiddenLayers=net_dict['n_hidden'], fcts=net_dict['symbolic_layer'], data_dim=n_params, checkDivLayer=net_dict['checkDivLayer'], fctsDiv=net_dict['symbolic_layer_div'])
 
         # training of network with given data (generated or loaded and formatted previously)
         # and save to file in corresponding folder (encoded with date and time when simulation started)
@@ -62,6 +62,8 @@ if __name__ == "__main__":
         gamma_start, gamma_stop = 0, 1+gamma_step # regular values for L1 ratio
         gamma_values = [*np.arange(gamma_start, gamma_stop, gamma_step)]
         for gamma_idx, gamma_val in enumerate(gamma_values):
+            # create Symbolic-Layered Neural Network (short SyLaNN)
+            mySyLaNN = SyLaNN.SyLaNet(n_hiddenLayers=net_dict['n_hidden'], fcts=net_dict['symbolic_layer'], data_dim=n_params, checkDivLayer=net_dict['checkDivLayer'], fctsDiv=net_dict['symbolic_layer_div'])
             simulationResults_dict = mySyLaNN.train(loadedDatasets_withConfigs, trainConfig_dict, gamma_val)
             # current L1 ratio (gamma_val) is saved within result dictionary
             file_name = loadedDatasets_withConfigs['saveFile_name'] + "_gammaIdx" + str(gamma_idx) + ".json"

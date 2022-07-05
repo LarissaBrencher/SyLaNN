@@ -136,9 +136,11 @@ class DivLayer(nn.Module):
 
         in_i = 0
         out_i = 0
+        self.denominator = []
         # only division (binary operator)
         while out_i < self.n_fcts:
             self.output.append(self.fcts[out_i](g[:, in_i], g[:, in_i+1]))
+            self.denominator.append(g[:, in_i+1])
             in_i += 2
             out_i += 1
 
@@ -157,6 +159,20 @@ class DivLayer(nn.Module):
         Returns the weight matrix as PyTorch tensor.
         """
         return self.W.clone()
+
+    def divPenalty(self, divThreshold=1000):
+        """
+        Returns the additional penalty term max(threshold-denominator, 0) for large denominators in the Division Layer.
+
+        :param divThreshold: Determines the threshold for the denominator, default 1000
+        :type divThreshold: int
+        """
+        div_penalty = 0.
+        for idx in range(len(self.denominator)):
+            checkThreshold = (self.denominator[idx] < divThreshold)
+            deviation = divThreshold - self.denominator[idx]
+            div_penalty = div_penalty + torch.sum(deviation*checkThreshold)
+        return div_penalty
 
 
 class SyLaNet(nn.Module):
@@ -317,7 +333,11 @@ class SyLaNet(nn.Module):
             output = self(data)
             SSE_loss = criterion(output, target)
             reg_loss = regObj(self.get_weights_tensor(), self.lmb_reg, self.approx_eps, gamma_val)
-            
+            div_loss = 0.
+            if self.checkDivLayer is True:
+                div_layer = self.hidden_layers[-1]
+                # TODO add user specified threshold
+                div_loss = div_layer.divPenalty()
             # Bayesian regularization computation
             if self.chooseBR is True:
                 # calculate current loss and apply backpropagation
@@ -325,18 +345,27 @@ class SyLaNet(nn.Module):
                     self.beta_SSE = self.beta_SSE.item()
                 if torch.is_tensor(self.alpha_reg):
                     self.alpha_reg = self.alpha_reg.item()
-                loss = self.beta_SSE*SSE_loss + self.alpha_reg*reg_loss
-                # print(self.beta_SSE)
-                # loss = SSE_loss + reg_loss
-                loss.backward()
-                return loss
+                if self.checkDivLayer is False:
+                    loss = self.beta_SSE*SSE_loss + self.alpha_reg*reg_loss
+                    loss.backward()
+                    return loss
+                if self.checkDivLayer is True:
+                    loss = self.beta_SSE*SSE_loss + self.alpha_reg*reg_loss + div_loss
+                    loss.backward()
+                    return loss
 
             # regular SyLaNN training when BR is off
             elif self.chooseBR is False:
-                # calculate current loss and apply backpropagation
-                loss = SSE_loss + reg_loss
-                loss.backward()
-                return loss
+                if self.checkDivLayer is False:
+                    # calculate current loss and apply backpropagation
+                    loss = SSE_loss + reg_loss
+                    loss.backward()
+                    return loss
+                if self.checkDivLayer is True:
+                    # calculate current loss and apply backpropagation
+                    loss = SSE_loss + reg_loss + div_loss
+                    loss.backward()
+                    return loss
             
         train_loss = optimizer.step(closure)
         output_plot = self(data)
@@ -376,6 +405,7 @@ class SyLaNet(nn.Module):
             assert self.beta_SSE == 1, "Please set beta SSE prefactor to one, if Bayesian regularization is not used."
             assert self.alpha_reg == 1, "Please set alpha reg prefactor to one, if Bayesian regularization is not used."
 
+        
         err_test_final = []
         found_eq = []
 
