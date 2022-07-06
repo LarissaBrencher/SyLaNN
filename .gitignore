@@ -132,6 +132,7 @@ dmypy.json
 
 # Local simulation results
 *_SyLaNNsimulation
+*_plots_*
 
 # Synology Client (NAS) sync files and folders
 desktop.ini

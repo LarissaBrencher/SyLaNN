@@ -78,7 +78,7 @@ def readDictionaries():
         'regularization_weight' : 0.001,
         'trainEpochs1' : 5,
         'trainEpochs2' : 20,
-        'trainEpochs3' : 28,
+        'trainEpochs3' : 100,
         'optimizer' : 'LBFGS',
         'chooseBR' : True, # choose whether Bayesian regularization (BR) is desired during training
         'error_data_factor' : 1, # choose initial value of BR's prefactor for data error
