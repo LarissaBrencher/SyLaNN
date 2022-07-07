@@ -358,12 +358,12 @@ class SyLaNet(nn.Module):
             elif self.chooseBR is False:
                 if self.checkDivLayer is False:
                     # calculate current loss and apply backpropagation
-                    loss = SSE_loss + reg_loss
+                    loss = SSE_loss + self.lmb_reg*reg_loss
                     loss.backward()
                     return loss
                 if self.checkDivLayer is True:
                     # calculate current loss and apply backpropagation
-                    loss = SSE_loss + reg_loss + div_loss
+                    loss = SSE_loss + self.lmb_reg*(reg_loss + div_loss)
                     loss.backward()
                     return loss
             
