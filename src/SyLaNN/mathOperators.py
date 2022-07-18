@@ -392,13 +392,12 @@ class Product(BaseFunction2):
         return x * y / self.norm
 
 
-# TODO add some assert statements to ensure that y is never zero
 class Quotient(BaseFunction2):
     """
     A class for the mathematical operator applying the quotient of two inputs.
     Takes BaseFunction2 as an argument.
     """
-    def __init__(self, norm=0.1):
+    def __init__(self, norm=10., threshold=0.5):
         """
         Constructor method, inherits from BaseFunction2 with adjusted norm parameter
         
@@ -406,6 +405,7 @@ class Quotient(BaseFunction2):
         :type norm: int
         """
         super().__init__(norm=norm)
+        self.thres = threshold
 
     def torch(self, x, y):
         """
@@ -419,7 +419,10 @@ class Quotient(BaseFunction2):
         :return: Resulting tensor after the division has been applied.
         :rtype: Tensor
         """
-        return (x / y) / self.norm
+        div = x / y
+        zeros = torch.autograd.Variable(torch.zeros(*y.shape))  
+        output = torch.where(y > self.thres, div, zeros)
+        return output / self.norm
 
     def sp(self, x, y):
         """
@@ -433,7 +436,10 @@ class Quotient(BaseFunction2):
         :return: Resulting tensor after the division has been applied.
         :rtype: Tensor
         """
-        return (x / y) / self.norm
+        #checkThreshold = (y > self.thres)
+        ##output = checkThreshold*(x/y)
+        return x/y / self.norm
+
 
     def np(self, x, y):
         """
@@ -447,7 +453,10 @@ class Quotient(BaseFunction2):
         :return: Resulting tensor after the division has been applied.
         :rtype: NumPy array
         """
-        return (x / y) / self.norm
+        div = x / y
+        zeros = np.zeros(*y.shape)
+        output = np.where(y > self.thres, div, zeros)
+        return output / self.norm
 
 
 def count_inputs(fcts):
@@ -492,7 +501,7 @@ default_func = [
     *[Identity()] * 4,
     *[Square()] * 2,
     *[Exp()] * 4,
-    *[Product()] * 2,
+    *[Product()] * 2
 ]
 
 default_divLayer = [

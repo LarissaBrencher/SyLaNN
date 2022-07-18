@@ -57,8 +57,8 @@ def readDictionaries():
                             *[ops.Quotient()] * 14 # same number of nodes like symbolic layer!
                             ],
         'symbolic_layer_str_div' : [
-                            'Quot', 'Quot', 
-                            'Quot', 'Quot', 'Quot', 'Quot', 
+                            'Quot', 'Quot',
+                            'Quot', 'Quot', 'Quot', 'Quot',
                             'Quot', 'Quot', 'Quot', 'Quot',
                             'Quot', 'Quot',
                             'Quot', 'Quot'
@@ -69,17 +69,17 @@ def readDictionaries():
     # LBFGS vs Adam: 50,100, then 100:100:1000, then 1000,5000,10000,15000
     # BR's init alpha, beta according to Bayesian regularization paper
     trainConfig_dict = {
-        'variables_str' : ['x', 'y', 'z'], # ['C'],
+        'variables_str' : ['C'], # ['x', 'y', 'z'],
         'loop1Reg' : 'ElasticNetapprox', # None, # warm-up phase
         'loop2Reg' : 'ElasticNetapprox', # 'L12approx',
         'loop3Reg' : 'ElasticNetapprox', # 'L12approx',
-        'regApprox_threshold': 0.01,
-        'learning_rate' : 0.01,
+        'regApprox_threshold': 0.001,
+        'learning_rate' : 0.05,
         'regularization_weight' : 0.001,
         'trainEpochs1' : 5,
         'trainEpochs2' : 20,
-        'trainEpochs3' : 100,
-        'optimizer' : 'LBFGS',
+        'trainEpochs3' : 60,
+        'optimizer' : 'Adam',
         'chooseBR' : True, # choose whether Bayesian regularization (BR) is desired during training
         'error_data_factor' : 1, # choose initial value of BR's prefactor for data error
         'error_reg_factor' : 0, # choose initial value of BR's prefactor for regularization error

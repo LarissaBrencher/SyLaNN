@@ -109,7 +109,7 @@ def slnn_print(weights, fcts, var_str, threshold=0.01, n_binary=0, checkDivLayer
         # treat division layer separately
         W_div = sparsify(sym.Matrix(weights[-2]), threshold=threshold)
         eq = eq * W_div
-        eq = apply_activFcts(eq, fctsDiv, n_binary_div)
+        eq = apply_activFcts(eq, fctsDiv, n_binary=n_binary_div)
         # output layer
         eq = eq * sparsify(sym.Matrix(weights[-1]))
         return eq
