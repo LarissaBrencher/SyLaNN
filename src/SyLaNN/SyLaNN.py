@@ -703,6 +703,164 @@ class SyLaNet(nn.Module):
                     if np.isnan(train_loss_val): # or train_loss_val > 1000:  # If loss goes to NaN, restart training
                         break
 
+        elif trainConfig_dict['optimizer'] == 'SGD':
+            while np.isnan(train_loss_val):
+                # use stochastic gradient descent optimizer
+                # TODO momentum and other optional settings?
+                optimizer = torch.optim.SGD(self.parameters(), lr=self.learning_rate)
+
+                # first training part
+                for epo in range(n_epochs1):
+                    reg_id = trainConfig_dict['loop1Reg']
+                    regObj = Penalty(reg_id)
+                    optimizer.zero_grad() # sets gradients of all optimized tensors to zero
+                    # forward pass
+                    outputs = self(data)
+                    criterion = self.loss()
+                    SSE_loss = criterion(outputs, target)
+                    reg_loss = regObj(self.get_weights_tensor(), self.lmb_reg, self.approx_eps, gamma_val)
+                    div_loss = 0.
+                    if self.checkDivLayer is True:
+                        div_layer = self.hidden_layers[-1]
+                        # TODO add user specified threshold
+                        div_loss = div_layer.divPenalty()
+                    train_loss = self.beta_SSE*SSE_loss + self.alpha_reg*reg_loss + div_loss
+                    train_loss.backward()
+                    optimizer.step()
+
+                    train_loss_onlySSE_val = SSE_loss.item()
+                    train_loss_val = train_loss.item()
+                    train_loss_onlySSE_list.append(train_loss_onlySSE_val)
+                    train_loss_list.append(train_loss_val)
+
+                    # update prefactors every n-th epoch
+                    if (epo != 0) and ((epo % self.updateBR_everyNepoch) == 0):
+                        squared_loss = (self(data) - target).pow(2)
+                        hessian_SSE = self.loss_hessian(squared_loss)
+                        hessian_penalty = regObj.calculate_hessian(self.get_weights_tensor(), self.approx_eps, gamma_val)
+                        hessian_total = self.beta_SSE*hessian_SSE+self.alpha_reg*hessian_penalty
+                        H_pinv = torch.linalg.pinv(hessian_total)
+                        tr_Hinv = torch.trace(H_pinv)
+                        N_p = sum(p.numel() for p in self.parameters()) # data.size(dim=1) # TODO add number of parameters somewhere as self.something?
+                        N_eff = N_p - self.alpha_reg * tr_Hinv.item()
+                        N_D = data.size(dim=0)
+                        # update prefactors
+                        E_D = squared_loss.sum() # sum of squared errors
+                        E_W = reg_loss #+div_loss # sum of squared weights
+                        self.alpha_reg = N_eff / (2*E_W.item())
+                        self.beta_SSE = (N_D - N_eff) / (2*E_D.item())
+
+                    with torch.no_grad():  # test error
+                        test_outputs = self(test_data)
+                        test_loss = nn.functional.mse_loss(test_outputs, test_target, reduction='sum')
+                        err_test_val = test_loss.item()
+                        err_test_list.append(err_test_val)
+
+                    print("Epoch: %d\tTotal training loss: %f\tTest error: %f" % (epo, train_loss_val, err_test_val))
+
+                    if np.isnan(train_loss_val): #  or train_loss_val > 1000:  # If loss goes to NaN, restart training
+                        break
+
+                # second training part
+                for epo in range(n_epochs1, n_epochs2):
+                    reg_id = trainConfig_dict['loop2Reg']
+                    regObj = Penalty(reg_id)
+                    optimizer.zero_grad() # sets gradients of all optimized tensors to zero
+                    outputs = self(data) # forward pass
+                    criterion = self.loss()
+                    SSE_loss = criterion(outputs, target)
+                    reg_loss = regObj(self.get_weights_tensor(), self.lmb_reg, self.approx_eps, gamma_val)
+                    if self.checkDivLayer is True:
+                        div_layer = self.hidden_layers[-1]
+                        # TODO add user specified threshold
+                        div_loss = div_layer.divPenalty()
+                    train_loss = self.beta_SSE*SSE_loss + self.alpha_reg*reg_loss + div_loss
+                    train_loss.backward()
+                    optimizer.step()
+                    
+                    train_loss_onlySSE_val = SSE_loss.item()
+                    train_loss_val = train_loss.item()
+                    train_loss_onlySSE_list.append(train_loss_onlySSE_val)
+                    train_loss_list.append(train_loss_val)
+
+                    # update prefactors every n-th epoch
+                    if (epo != 0) and ((epo % self.updateBR_everyNepoch) == 0):
+                        squared_loss = (self(data) - target).pow(2)
+                        hessian_SSE = self.loss_hessian(squared_loss)
+                        hessian_penalty = regObj.calculate_hessian(self.get_weights_tensor(), self.approx_eps, gamma_val)
+                        hessian_total = self.beta_SSE*hessian_SSE+self.alpha_reg*hessian_penalty
+                        H_pinv = torch.linalg.pinv(hessian_total)
+                        tr_Hinv = torch.trace(H_pinv)
+                        N_p = sum(p.numel() for p in self.parameters()) # data.size(dim=1) # TODO add number of parameters somewhere as self.something?
+                        N_eff = N_p - self.alpha_reg * tr_Hinv.item()
+                        N_D = data.size(dim=0)
+                        # update prefactors
+                        E_D = squared_loss.sum() # sum of squared errors
+                        E_W = reg_loss #+div_loss # sum of squared weights
+                        self.alpha_reg = N_eff / (2*E_W.item())
+                        self.beta_SSE = (N_D - N_eff) / (2*E_D.item())
+
+                    with torch.no_grad():  # test error
+                        test_outputs = self(test_data)
+                        test_loss = nn.functional.mse_loss(test_outputs, test_target, reduction='sum')
+                        err_test_val = test_loss.item()
+                        err_test_list.append(err_test_val)
+
+                    print("Epoch: %d\tTotal training loss: %f\tTest error: %f" % (epo, train_loss_val, err_test_val))
+
+                    if np.isnan(train_loss_val): # or train_loss_val > 1000:  # If loss goes to NaN, restart training
+                        break
+
+                # third training part
+                for epo in range(n_epochs2, n_epochs3+1):
+                    reg_id = trainConfig_dict['loop3Reg']
+                    regObj = Penalty(reg_id)
+                    optimizer.zero_grad() # sets gradients of all optimized tensors to zero
+                    outputs = self(data) # forward pass
+                    criterion = self.loss()
+                    SSE_loss = criterion(outputs, target)
+                    reg_loss = regObj(self.get_weights_tensor(), self.lmb_reg, self.approx_eps, gamma_val)
+                    if self.checkDivLayer is True:
+                        div_layer = self.hidden_layers[-1]
+                        # TODO add user specified threshold
+                        div_loss = div_layer.divPenalty()
+                    train_loss = self.beta_SSE*SSE_loss + self.alpha_reg*reg_loss + div_loss
+                    train_loss.backward()
+                    optimizer.step()
+                    
+                    train_loss_onlySSE_val = SSE_loss.item()
+                    train_loss_val = train_loss.item()
+                    train_loss_onlySSE_list.append(train_loss_onlySSE_val)
+                    train_loss_list.append(train_loss_val)
+
+                    # update prefactors every n-th epoch
+                    if (epo != 0) and ((epo % self.updateBR_everyNepoch) == 0):
+                        squared_loss = (self(data) - target).pow(2)
+                        hessian_SSE = self.loss_hessian(squared_loss)
+                        hessian_penalty = regObj.calculate_hessian(self.get_weights_tensor(), self.approx_eps, gamma_val)
+                        hessian_total = self.beta_SSE*hessian_SSE+self.alpha_reg*hessian_penalty
+                        H_pinv = torch.linalg.pinv(hessian_total)
+                        tr_Hinv = torch.trace(H_pinv)
+                        N_p = sum(p.numel() for p in self.parameters()) # data.size(dim=1) # TODO add number of parameters somewhere as self.something?
+                        N_eff = N_p - self.alpha_reg * tr_Hinv.item()
+                        N_D = data.size(dim=0)
+                        # update prefactors
+                        E_D = squared_loss.sum() # sum of squared errors
+                        E_W = reg_loss # +div_loss # sum of squared weights
+                        self.alpha_reg = N_eff / (2*E_W.item())
+                        self.beta_SSE = (N_D - N_eff) / (2*E_D.item())
+
+                    with torch.no_grad():  # test error
+                        test_outputs = self(test_data)
+                        test_loss = nn.functional.mse_loss(test_outputs, test_target, reduction='sum')
+                        err_test_val = test_loss.item()
+                        err_test_list.append(err_test_val)
+
+                    print("Epoch: %d\tTotal training loss: %f\tTest error: %f" % (epo, train_loss_val, err_test_val))
+
+                    if np.isnan(train_loss_val): # or train_loss_val > 1000:  # If loss goes to NaN, restart training
+                        break
+
         else:
             raise ValueError("Chosen optimizer not implemented.")
 
