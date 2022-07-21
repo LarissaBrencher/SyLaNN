@@ -42,6 +42,7 @@ def readDictionaries():
     net_dict = {
         'n_hidden' : 2,
         'checkDivLayer' : True,
+        'divThreshold' : 0.5,
         'symbolic_layer' : [
                             *[ops.Constant()] * 2,
                             *[ops.Identity()] * 4,
@@ -78,6 +79,7 @@ def readDictionaries():
         'loop3Reg' : 'ElasticNetapprox', # 'L12approx',
         'regApprox_threshold': 0.001,
         'learning_rate' : 0.05,
+        'cutWeights_threshold' : 0.01,
         'regularization_weight' : 0.001,
         'trainEpochs1' : 5,
         'trainEpochs2' : 20,

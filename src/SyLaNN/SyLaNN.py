@@ -4,8 +4,6 @@ This includes the construction of the customized layer, the architecture of the 
 and the definition of the approximated penalty function.
 """
 
-from multiprocessing import reduction
-from tabnanny import check
 import numpy as np
 import torch
 import torch.nn as nn
@@ -13,7 +11,6 @@ import mathOperators as ops
 import time
 import eq_print
 from penalty import Penalty
-# import copy
 
 
 class SymLayer(nn.Module):
@@ -183,55 +180,53 @@ class SyLaNet(nn.Module):
     Definition of the Symbolic-Layered Neural Network (SyLaNN) architecture,
     inherits from PyTorch's nn.Module.
     """
-    def __init__(self, n_hiddenLayers=2, fcts=ops.default_func, init_W=None, data_dim=1, checkDivLayer=False, fctsDiv=ops.default_divLayer):
+    def __init__(self, net_dict, init_W=None, data_dim=1):
         """
         Constructor method
 
-        :param n_hiddenLayers: Number of hidden layers of the SyLaNN (depth), default 2
-        :type n_hiddenLayers: int
-        :param fcts: Activation functions per layer, default ops.default_func
-        :type fcts: list\[objects\]
+        :param net\_dict: Dictionary containing the configurations of the SyLaNN architecture
+        :type net\_dict: dict
         :param init_W: Pre-defined weight matrix, default None
         :type init_W: Tensor
         :param data_dim: Number of variables from the given input data, default 1
         :type data_dim: int
-        :param checkDivLayer: Selection whether an additional division operator layer before the final output is desired, default False
-        :type checkDivLayer: boolean
-        :param fctsDiv: Activation functions of division layer (last layer before final output)
-        :type fctsDiv: list\[objects\]
         """
         super(SyLaNet, self).__init__()
 
-        self.checkDivLayer = checkDivLayer
+        self.checkDivLayer = net_dict['checkDivLayer']
 
         if self.checkDivLayer is False:
-            self.depth = n_hiddenLayers
-            self.fcts = fcts
+            self.depth = net_dict['n_hidden']
+            self.fcts = net_dict['symbolic_layer']
             self.fctsDiv = None
             layer_in_dim = [data_dim] + self.depth*[len(self.fcts)]
 
             if init_W is None:
-                layers = [SymLayer(fcts=fcts, in_dim=layer_in_dim[i]) for i in range(self.depth)]
+                layers = [SymLayer(fcts=net_dict['symbolic_layer'], in_dim=layer_in_dim[i]) for i in range(self.depth)]
                 self.output_weight = nn.Parameter(torch.rand((layers[-1].n_fcts, 1)))
             else:
-                layers = [SymLayer(fcts=fcts, in_dim=layer_in_dim[i], init_W=init_W[i]) for i in range(self.depth)]
+                layers = [SymLayer(fcts=net_dict['symbolic_layer'], in_dim=layer_in_dim[i], init_W=init_W[i]) for i in range(self.depth)]
                 self.output_weight = nn.Parameter(init_W[-1].clone().detach())
         
             self.hidden_layers = nn.Sequential(*layers)
 
         if self.checkDivLayer is True:
-            assert len(fcts) == len(fctsDiv), "Input dimensions (division layer) do not match previous layer's output dimensions."
-            self.depth = n_hiddenLayers + 1
-            self.fcts = fcts
-            self.fctsDiv = fctsDiv
+            assert len(net_dict['symbolic_layer']) == len(net_dict['symbolic_layer_div']), "Input dimensions (division layer) do not match previous layer's output dimensions."
+            self.depth = net_dict['n_hidden'] + 1
+            self.fcts = net_dict['symbolic_layer']
+            self.fctsDiv = net_dict['symbolic_layer_div']
             layer_in_dim = [data_dim] + (self.depth-1)*[len(self.fcts)] + [len(self.fctsDiv)]
+            if 'divThreshold' in net_dict:
+                self.divThres = net_dict['divThreshold']
+            else:
+                self.divThres = 0.5 # TODO look up which default value makes sense
 
             if init_W is None:
-                layers = [SymLayer(fcts=fcts, in_dim=layer_in_dim[i]) for i in range(self.depth-1)] + [DivLayer(fcts=fctsDiv, in_dim=layer_in_dim[-1])]
+                layers = [SymLayer(fcts=net_dict['symbolic_layer'], in_dim=layer_in_dim[i]) for i in range(self.depth-1)] + [DivLayer(fcts=net_dict['symbolic_layer_div'], in_dim=layer_in_dim[-1])]
                 self.output_weight = nn.Parameter(torch.rand((layers[-1].n_fcts, 1)))
             else:
                 # init_W's structure is assumed to contain the output weights in the last element, therefore second-to-last weights are for the division layer
-                layers = [SymLayer(fcts=fcts, in_dim=layer_in_dim[i], init_W=init_W[i]) for i in range(self.depth-1)] + [DivLayer(fcts=fctsDiv, in_dim=layer_in_dim[-1], init_W=init_W[-2])]
+                layers = [SymLayer(fcts=net_dict['symbolic_layer'], in_dim=layer_in_dim[i], init_W=init_W[i]) for i in range(self.depth-1)] + [DivLayer(fcts=net_dict['symbolic_layer_div'], in_dim=layer_in_dim[-1], init_W=init_W[-2])]
                 self.output_weight = nn.Parameter(init_W[-1].clone().detach())
         
             self.hidden_layers = nn.Sequential(*layers)
@@ -339,8 +334,7 @@ class SyLaNet(nn.Module):
             div_loss = 0.
             if self.checkDivLayer is True:
                 div_layer = self.hidden_layers[-1]
-                # TODO add user specified threshold
-                div_loss = div_layer.divPenalty()
+                div_loss = div_layer.divPenalty(divThreshold=self.divThres)
             # Bayesian regularization computation
             if self.chooseBR is True:
                 # calculate current loss and apply backpropagation
@@ -377,8 +371,7 @@ class SyLaNet(nn.Module):
         div_loss = 0.
         if self.checkDivLayer is True:
             div_layer = self.hidden_layers[-1]
-            # TODO add user specified threshold
-            div_loss = div_layer.divPenalty()
+            div_loss = div_layer.divPenalty(divThreshold=self.divThres)
         return train_loss, SSE_loss_plot, reg_loss, div_loss
 
     def train(self, generatedDatasets_dict, trainConfig_dict, gamma_val=0.5):
@@ -454,7 +447,7 @@ class SyLaNet(nn.Module):
                         hessian_total = self.beta_SSE*hessian_SSE+self.alpha_reg*hessian_penalty
                         H_pinv = torch.linalg.pinv(hessian_total)
                         tr_Hinv = torch.trace(H_pinv)
-                        N_p = sum(p.numel() for p in self.parameters()) # data.size(dim=1) # TODO add number of parameters somewhere as self.something?
+                        N_p = sum(p.numel() for p in self.parameters())
                         N_eff = N_p - self.alpha_reg * tr_Hinv.item()
                         N_D = data.size(dim=0)
                         # update prefactors
@@ -489,7 +482,7 @@ class SyLaNet(nn.Module):
                         hessian_total = self.beta_SSE*hessian_SSE+self.alpha_reg*hessian_penalty
                         H_pinv = torch.linalg.pinv(hessian_total)
                         tr_Hinv = torch.trace(H_pinv)
-                        N_p = sum(p.numel() for p in self.parameters()) # data.size(dim=1) # TODO add number of parameters somewhere as self.something?
+                        N_p = sum(p.numel() for p in self.parameters())
                         N_eff = N_p - self.alpha_reg * tr_Hinv.item()
                         N_D = data.size(dim=0)
                         # update prefactors
@@ -524,7 +517,7 @@ class SyLaNet(nn.Module):
                         hessian_total = self.beta_SSE*hessian_SSE+self.alpha_reg*hessian_penalty
                         H_pinv = torch.linalg.pinv(hessian_total)
                         tr_Hinv = torch.trace(H_pinv)
-                        N_p = sum(p.numel() for p in self.parameters()) # data.size(dim=1) # TODO add number of parameters somewhere as self.something?
+                        N_p = sum(p.numel() for p in self.parameters())
                         N_eff = N_p - self.alpha_reg * tr_Hinv.item()
                         N_D = data.size(dim=0)
                         # update prefactors
@@ -564,8 +557,7 @@ class SyLaNet(nn.Module):
                     div_loss = 0.
                     if self.checkDivLayer is True:
                         div_layer = self.hidden_layers[-1]
-                        # TODO add user specified threshold
-                        div_loss = div_layer.divPenalty()
+                        div_loss = div_layer.divPenalty(divThreshold=self.divThres)
                     train_loss = self.beta_SSE*SSE_loss + self.alpha_reg*reg_loss + div_loss
                     train_loss.backward()
                     optimizer.step()
@@ -583,7 +575,7 @@ class SyLaNet(nn.Module):
                         hessian_total = self.beta_SSE*hessian_SSE+self.alpha_reg*hessian_penalty
                         H_pinv = torch.linalg.pinv(hessian_total)
                         tr_Hinv = torch.trace(H_pinv)
-                        N_p = sum(p.numel() for p in self.parameters()) # data.size(dim=1) # TODO add number of parameters somewhere as self.something?
+                        N_p = sum(p.numel() for p in self.parameters())
                         N_eff = N_p - self.alpha_reg * tr_Hinv.item()
                         N_D = data.size(dim=0)
                         # update prefactors
@@ -614,8 +606,7 @@ class SyLaNet(nn.Module):
                     reg_loss = regObj(self.get_weights_tensor(), self.lmb_reg, self.approx_eps, gamma_val)
                     if self.checkDivLayer is True:
                         div_layer = self.hidden_layers[-1]
-                        # TODO add user specified threshold
-                        div_loss = div_layer.divPenalty()
+                        div_loss = div_layer.divPenalty(divThreshold=self.divThres)
                     train_loss = self.beta_SSE*SSE_loss + self.alpha_reg*reg_loss + div_loss
                     train_loss.backward()
                     optimizer.step()
@@ -633,7 +624,7 @@ class SyLaNet(nn.Module):
                         hessian_total = self.beta_SSE*hessian_SSE+self.alpha_reg*hessian_penalty
                         H_pinv = torch.linalg.pinv(hessian_total)
                         tr_Hinv = torch.trace(H_pinv)
-                        N_p = sum(p.numel() for p in self.parameters()) # data.size(dim=1) # TODO add number of parameters somewhere as self.something?
+                        N_p = sum(p.numel() for p in self.parameters())
                         N_eff = N_p - self.alpha_reg * tr_Hinv.item()
                         N_D = data.size(dim=0)
                         # update prefactors
@@ -664,8 +655,7 @@ class SyLaNet(nn.Module):
                     reg_loss = regObj(self.get_weights_tensor(), self.lmb_reg, self.approx_eps, gamma_val)
                     if self.checkDivLayer is True:
                         div_layer = self.hidden_layers[-1]
-                        # TODO add user specified threshold
-                        div_loss = div_layer.divPenalty()
+                        div_loss = div_layer.divPenalty(divThreshold=self.divThres)
                     train_loss = self.beta_SSE*SSE_loss + self.alpha_reg*reg_loss + div_loss
                     train_loss.backward()
                     optimizer.step()
@@ -683,7 +673,7 @@ class SyLaNet(nn.Module):
                         hessian_total = self.beta_SSE*hessian_SSE+self.alpha_reg*hessian_penalty
                         H_pinv = torch.linalg.pinv(hessian_total)
                         tr_Hinv = torch.trace(H_pinv)
-                        N_p = sum(p.numel() for p in self.parameters()) # data.size(dim=1) # TODO add number of parameters somewhere as self.something?
+                        N_p = sum(p.numel() for p in self.parameters())
                         N_eff = N_p - self.alpha_reg * tr_Hinv.item()
                         N_D = data.size(dim=0)
                         # update prefactors
@@ -722,8 +712,7 @@ class SyLaNet(nn.Module):
                     div_loss = 0.
                     if self.checkDivLayer is True:
                         div_layer = self.hidden_layers[-1]
-                        # TODO add user specified threshold
-                        div_loss = div_layer.divPenalty()
+                        div_loss = div_layer.divPenalty(divThreshold=self.divThres)
                     train_loss = self.beta_SSE*SSE_loss + self.alpha_reg*reg_loss + div_loss
                     train_loss.backward()
                     optimizer.step()
@@ -741,7 +730,7 @@ class SyLaNet(nn.Module):
                         hessian_total = self.beta_SSE*hessian_SSE+self.alpha_reg*hessian_penalty
                         H_pinv = torch.linalg.pinv(hessian_total)
                         tr_Hinv = torch.trace(H_pinv)
-                        N_p = sum(p.numel() for p in self.parameters()) # data.size(dim=1) # TODO add number of parameters somewhere as self.something?
+                        N_p = sum(p.numel() for p in self.parameters())
                         N_eff = N_p - self.alpha_reg * tr_Hinv.item()
                         N_D = data.size(dim=0)
                         # update prefactors
@@ -772,8 +761,7 @@ class SyLaNet(nn.Module):
                     reg_loss = regObj(self.get_weights_tensor(), self.lmb_reg, self.approx_eps, gamma_val)
                     if self.checkDivLayer is True:
                         div_layer = self.hidden_layers[-1]
-                        # TODO add user specified threshold
-                        div_loss = div_layer.divPenalty()
+                        div_loss = div_layer.divPenalty(divThreshold=self.divThres)
                     train_loss = self.beta_SSE*SSE_loss + self.alpha_reg*reg_loss + div_loss
                     train_loss.backward()
                     optimizer.step()
@@ -791,7 +779,7 @@ class SyLaNet(nn.Module):
                         hessian_total = self.beta_SSE*hessian_SSE+self.alpha_reg*hessian_penalty
                         H_pinv = torch.linalg.pinv(hessian_total)
                         tr_Hinv = torch.trace(H_pinv)
-                        N_p = sum(p.numel() for p in self.parameters()) # data.size(dim=1) # TODO add number of parameters somewhere as self.something?
+                        N_p = sum(p.numel() for p in self.parameters())
                         N_eff = N_p - self.alpha_reg * tr_Hinv.item()
                         N_D = data.size(dim=0)
                         # update prefactors
@@ -822,8 +810,7 @@ class SyLaNet(nn.Module):
                     reg_loss = regObj(self.get_weights_tensor(), self.lmb_reg, self.approx_eps, gamma_val)
                     if self.checkDivLayer is True:
                         div_layer = self.hidden_layers[-1]
-                        # TODO add user specified threshold
-                        div_loss = div_layer.divPenalty()
+                        div_loss = div_layer.divPenalty(divThreshold=self.divThres)
                     train_loss = self.beta_SSE*SSE_loss + self.alpha_reg*reg_loss + div_loss
                     train_loss.backward()
                     optimizer.step()
@@ -841,7 +828,7 @@ class SyLaNet(nn.Module):
                         hessian_total = self.beta_SSE*hessian_SSE+self.alpha_reg*hessian_penalty
                         H_pinv = torch.linalg.pinv(hessian_total)
                         tr_Hinv = torch.trace(H_pinv)
-                        N_p = sum(p.numel() for p in self.parameters()) # data.size(dim=1) # TODO add number of parameters somewhere as self.something?
+                        N_p = sum(p.numel() for p in self.parameters())
                         N_eff = N_p - self.alpha_reg * tr_Hinv.item()
                         N_D = data.size(dim=0)
                         # update prefactors
@@ -883,8 +870,7 @@ class SyLaNet(nn.Module):
             fcts_div = []
             if self.checkDivLayer is True:
                 fcts_div = self.fctsDiv
-            # TODO add threshold as input in dictionary settings (for user to decide)
-            expr = eq_print.network(weights, fcts, vars_str[:n_inputArgs], threshold=0.01, checkDivLayer=self.checkDivLayer, fctsDiv=fcts_div)
+            expr = eq_print.network(weights, fcts, vars_str[:n_inputArgs], threshold=trainConfig_dict['cutWeights_threshold'], checkDivLayer=self.checkDivLayer, fctsDiv=fcts_div)
             print(expr)
 
 

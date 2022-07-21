@@ -493,17 +493,3 @@ def count_binaryFcts(fcts):
         if isinstance(fct, BaseFunction2):
             i += 1
     return i
-
-# implicitly gives the number of neurons per SymLayer with the int replications
-# TODO document this default somewhere
-default_func = [
-    *[Constant()] * 2,
-    *[Identity()] * 4,
-    *[Square()] * 2,
-    *[Exp()] * 4,
-    *[Product()] * 2
-]
-
-default_divLayer = [
-    *[Quotient()] * 14
-]

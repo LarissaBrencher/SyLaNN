@@ -1,11 +1,11 @@
-'''
+"""
 This file contains several types of noises which can be chosen to be applied during data creation.
-'''
+"""
 
 import torch
 
 def createNoise(data_size, noise_std=0.01, type_str='white'):
-    '''
+    """
     Creates noise which can be optionally chosen during data creation.
     The default setting returns a Gaussian (white) noise which is commonly used.
     Possible choices: white, more coming soon
@@ -19,7 +19,7 @@ def createNoise(data_size, noise_std=0.01, type_str='white'):
 
     :return: Generated noise of chosen type
     :rtype: Tensor
-    '''
+    """
     if type_str.__eq__('white'):
         # std choice according to example in
         # Learning Equations for Extrapolation and Control by Sahoo, Lampert, Martius

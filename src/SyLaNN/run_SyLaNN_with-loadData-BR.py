@@ -63,7 +63,7 @@ if __name__ == "__main__":
         gamma_values = [*np.arange(gamma_start, gamma_stop, gamma_step)]
         for gamma_idx, gamma_val in enumerate(gamma_values):
             # create Symbolic-Layered Neural Network (short SyLaNN)
-            mySyLaNN = SyLaNN.SyLaNet(n_hiddenLayers=net_dict['n_hidden'], fcts=net_dict['symbolic_layer'], data_dim=n_params, checkDivLayer=net_dict['checkDivLayer'], fctsDiv=net_dict['symbolic_layer_div'])
+            mySyLaNN = SyLaNN.SyLaNet(net_dict, data_dim=n_params)
             simulationResults_dict = mySyLaNN.train(loadedDatasets_withConfigs, trainConfig_dict, gamma_val)
             # current L1 ratio (gamma_val) is saved within result dictionary
             file_name = loadedDatasets_withConfigs['saveFile_name'] + "_gammaIdx" + str(gamma_idx) + ".json"
