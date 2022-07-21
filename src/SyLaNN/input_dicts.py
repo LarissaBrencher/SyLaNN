@@ -32,7 +32,10 @@ def readDictionaries():
         'domain_train' : [0.25, 0.75],
         'domain_test' : [0, 1],
         'ref_fct_str' : 'lambda C : 0.00059 * (1*C) / (1 + 1*C)', # k=1 q_max = 5.9e-4
-        'saveFile_name' : "_LangmuirIsotherm" # "_LinearMiniTest"
+        'saveFile_name' : "_LangmuirIsotherm", # "_LinearMiniTest"
+        'checkNoise' : True,
+        'noise_type' : 'white',
+        'noise_std' : 0.01
     }
 
     # for creating the neural network structure

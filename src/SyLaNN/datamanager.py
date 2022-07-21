@@ -14,6 +14,7 @@ from sympy import symbols
 from sympy.utilities.lambdify import lambdastr
 from scipy.stats import truncnorm
 import copy
+import noise
 
 class DataManager():
     """
@@ -61,6 +62,18 @@ class DataManager():
         a_test, b_test = range_min_test, range_max_test
         inputX_test = torch.from_numpy(truncnorm.rvs(a_test, b_test, size=[generateData_dict['n_test'], x_dim]))
         outputY_test = torch.tensor([[ref_fct(*x_i)] for x_i in inputX_test])
+
+        # if noise is chosen in dict
+        if generateData_dict['checkNoise'] is True:
+            tmp_saveFileName = generateData_dict['saveFile_name']
+            generateData_dict['saveFile_name'] = tmp_saveFileName + '_' + generateData_dict['noise_type'] + 'Noise'
+            train_size = outputY_train.size()
+            test_size = outputY_test.size()
+            noise_train = noise.createNoise(train_size, noise_std=generateData_dict['noise_std'], type_str=generateData_dict['noise_type'])
+            noise_test = noise.createNoise(test_size, noise_std=generateData_dict['noise_std'], type_str=generateData_dict['noise_type'])
+            outputY_train = torch.add(outputY_train, noise_train)
+            outputY_test = torch.add(outputY_test, noise_test)
+
         # write generated data sets into dictionary
         dataset_dict = {
             'X_train' : inputX_train,
