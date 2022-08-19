@@ -1,6 +1,6 @@
 """
 Creates dictionaries which contain the specifics for generating data,
-defining the SLNN's architecture and its training configurations.
+defining the SyLaNN's architecture and its training configurations.
 """
 
 import mathOperators as ops
@@ -8,7 +8,7 @@ import mathOperators as ops
 def readDictionaries():
     """
     Returns dictionaries which contain the specifics for generating data,
-    defining the SLNN's architecture and its training configurations.
+    defining the SyLaNN's architecture and its training configurations.
 
     :return: generateData\_dict, net\_dict, trainConfig\_dict
     :rtype: dict
@@ -29,20 +29,21 @@ def readDictionaries():
     generateData_dict = {
         'n_train' : 2000,
         'n_test' : 1000,
-        'domain_train' : [0.25, 0.75],
-        'domain_test' : [0, 1],
-        'ref_fct_str' : 'lambda C : 0.00059 * (1*C) / (1 + 1*C)', # k=1 q_max = 5.9e-4
-        'saveFile_name' : "_LangmuirIsotherm", # "_LinearMiniTest"
+        'domain_train' : [-1, 1], # [0.25, 0.75],
+        'domain_test' : [-2, 2], # [0, 1],
+        'ref_fct_str' : 'lambda x : x**2*y + x*y**2', # 'lambda C : 0.00059 * (1*C) / (1 + 1*C)', # k=1 q_max = 5.9e-4
+        'saveFile_name' : "_2Dpoly",
         'checkNoise' : True,
         'noise_type' : 'white',
-        'noise_std' : 0.01
+        'noise_std' : 0.01,
+        'standardize_or_centralize' : 's'
     }
 
     # for creating the neural network structure
     net_dict = {
         'n_hidden' : 2,
         'checkDivLayer' : True,
-        'divThreshold' : 0.5,
+        'divThreshold' : 1, # everything below 1 can be expressed as a product alternatively
         'symbolic_layer' : [
                             *[ops.Constant()] * 2,
                             *[ops.Identity()] * 4,
@@ -58,11 +59,13 @@ def readDictionaries():
                             'Prod', 'Prod'
                             ],
         'symbolic_layer_div' : [
-                            *[ops.Quotient()] * 14 # same number of nodes like symbolic layer!
+                            *[ops.Constant()] * 2,
+                            *[ops.Identity()] * 4,
+                            *[ops.Quotient()] * 8 # same number of nodes like symbolic layer!
                             ],
         'symbolic_layer_str_div' : [
-                            'Quot', 'Quot',
-                            'Quot', 'Quot', 'Quot', 'Quot',
+                            'Const', 'Const', 
+                            'Id', 'Id', 'Id', 'Id', 
                             'Quot', 'Quot', 'Quot', 'Quot',
                             'Quot', 'Quot',
                             'Quot', 'Quot'
@@ -73,22 +76,22 @@ def readDictionaries():
     # LBFGS vs Adam: 50,100, then 100:100:1000, then 1000,5000,10000,15000
     # BR's init alpha, beta according to Bayesian regularization paper
     trainConfig_dict = {
-        'variables_str' : ['C'], # ['x', 'y', 'z'],
+        'variables_str' : ['x'], # ['x', 'y', 'z'],
         'loop1Reg' : 'ElasticNetapprox', # None, # warm-up phase
         'loop2Reg' : 'ElasticNetapprox', # 'L12approx',
         'loop3Reg' : 'ElasticNetapprox', # 'L12approx',
-        'regApprox_threshold': 0.001,
+        'regApprox_threshold': 0.0001,
         'learning_rate' : 0.05,
         'cutWeights_threshold' : 0.01,
         'regularization_weight' : 0.001,
-        'trainEpochs1' : 5,
-        'trainEpochs2' : 20,
-        'trainEpochs3' : 60,
+        'trainEpochs1' : 50,
+        'trainEpochs2' : 100,
+        'trainEpochs3' : 500, # according to Martius, Adam needs (L-1)*10000 epochs with L being the number of hidden layers
         'optimizer' : 'Adam',
         'chooseBR' : True, # choose whether Bayesian regularization (BR) is desired during training
         'error_data_factor' : 1, # choose initial value of BR's prefactor for data error
         'error_reg_factor' : 0, # choose initial value of BR's prefactor for regularization error
-        'updateBRparams_every_n_epoch' : 5
+        'updateBRparams_every_n_epoch' : 10
     }
 
     return generateData_dict, net_dict, trainConfig_dict

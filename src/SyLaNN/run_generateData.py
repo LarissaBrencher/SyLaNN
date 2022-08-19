@@ -48,4 +48,6 @@ if __name__ == "__main__":
         save_file_name = load_folder_path + curr_date + file_name
         manageData_obj.saveDataset(save_file_name, generateData_dict, generatedDatasets_dict)
 
+        print('Done generating dataset.')
+
 

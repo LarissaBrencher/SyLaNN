@@ -54,13 +54,13 @@ class DataManager():
         range_min_test = generateData_dict['domain_test'][0]
         range_max_test = generateData_dict['domain_test'][1]
         # uniform-distributed:
-        # inputX_test = (range_max_test - range_min_test) * torch.rand([generateData_dict['n_test'], x_dim]) + range_min_test
+        inputX_test = (range_max_test - range_min_test) * torch.rand([generateData_dict['n_test'], x_dim]) + range_min_test
         # normal-distributed:
         # mean_test = (range_max_test - range_min_test) / 2
         # std_test = 1 
         # for specific mean, std: (range_min_test - mean_test) / std_test, (range_max_test - mean_test) / std_test
-        a_test, b_test = range_min_test, range_max_test
-        inputX_test = torch.from_numpy(truncnorm.rvs(a_test, b_test, size=[generateData_dict['n_test'], x_dim]))
+        # a_test, b_test = range_min_test, range_max_test
+        # inputX_test = torch.from_numpy(truncnorm.rvs(a_test, b_test, size=[generateData_dict['n_test'], x_dim]))
         outputY_test = torch.tensor([[ref_fct(*x_i)] for x_i in inputX_test])
 
         # if noise is chosen in dict
@@ -73,15 +73,25 @@ class DataManager():
             noise_test = noise.createNoise(test_size, noise_std=generateData_dict['noise_std'], type_str=generateData_dict['noise_type'])
             outputY_train = torch.add(outputY_train, noise_train)
             outputY_test = torch.add(outputY_test, noise_test)
+        elif generateData_dict['checkNoise'] is False:
+            pass
 
         # write generated data sets into dictionary
-        dataset_dict = {
+        generated_dict = {
             'X_train' : inputX_train,
             'y_train' : outputY_train,
             'X_test' : inputX_test,
             'y_test' : outputY_test,
             'x_dim' : x_dim
         }
+
+        if generateData_dict['standardize_or_centralize'] == 's':
+            dataset_dict = self.standardizeData(generated_dict)
+        elif generateData_dict['standardize_or_centralize'] == 'c':
+            dataset_dict = self.centralizeData(generated_dict)
+        else:
+            dataset_dict = generated_dict
+
         return dataset_dict
 
     def saveDataset(self, save_file_name, configGenerateData_dict, dataset_dict):
@@ -101,6 +111,21 @@ class DataManager():
             **dataset_dict_format
         }
 
+        if saveFile_dict['standardize_or_centralize'] == 's':
+            insert_s = '_s'
+            sub_str = '.json'
+            idx = save_file_name.index(sub_str)
+            save_file_name = save_file_name[:idx] + insert_s + save_file_name[idx:]
+            saveFile_dict['saveFile_name'] = saveFile_dict['saveFile_name'] + insert_s
+        elif saveFile_dict['standardize_or_centralize'] == 'c':
+            insert_c = '_c'
+            sub_str = '.json'
+            idx = save_file_name.index(sub_str)
+            save_file_name = save_file_name[:idx] + insert_c + save_file_name[idx:]
+            saveFile_dict['saveFile_name'] = saveFile_dict['saveFile_name'] + insert_c
+        else:
+            pass
+
         with open(save_file_name, 'w') as outfile:
             json.dump(saveFile_dict, outfile, indent = 4)
 
@@ -119,6 +144,84 @@ class DataManager():
         dataset_format = self.list2tensor(data) # change lists back to torch tensors
         dataset.close()
         return dataset_format
+
+    def centralizeData(self, data_dict):
+        """
+        Centralizes a given dataset by its mean (per column, i.e. physical variable).
+
+        :param data\_dict: Name of the JSON file in which the dataset is saved.
+        :type data\_dict: str
+        """
+        X_train = data_dict['X_train']
+        X_test = data_dict['X_test']
+        nVars = X_train.size(dim=1)
+        X_train_c = []
+        X_test_c = []
+        # loop over the variable dimension and center each variable by its mean
+        for iVar in range(nVars):
+            current_train = X_train[:, iVar]
+            current_test = X_test[:, iVar]
+            mean_train = torch.mean(current_train)
+            mean_test = torch.mean(current_test)
+            central_train = torch.sub(current_train, mean_train)
+            central_test = torch.sub(current_test, mean_test)
+            # save centralized columns in new tensor
+            X_train_c.append(central_train)
+            X_test_c.append(central_test)
+        X_train_c = torch.stack(X_train_c, dim=1)
+        X_test_c = torch.stack(X_test_c, dim=1)
+        # same computation for features saved in y_*
+        y_train = data_dict['y_train']
+        y_test = data_dict['y_test']
+        mean_train = torch.mean(y_train)
+        mean_test = torch.mean(y_test)
+        y_train_c = torch.sub(y_train, mean_train)
+        y_test_c = torch.sub(y_test, mean_test)
+        # update the dictionary with new centralized values and return it
+        data_dict.update({'X_train': X_train_c, 'X_test': X_test_c, 'y_train': y_train_c, 'y_test': y_test_c})
+        return data_dict
+
+    def standardizeData(self, data_dict):
+        """
+        Standardizes a given dataset by its mean and its standard deviation (per column, i.e. physical variable).
+
+        :param data\_dict: Name of the JSON file in which the dataset is saved.
+        :type data\_dict: str
+        """
+        data_dict = self.centralizeData(data_dict)
+        X_train = data_dict['X_train']
+        X_test = data_dict['X_test']
+        nVars = X_train.size(dim=1)
+        X_train_s = []
+        X_test_s = []
+        # loop over the variable dimension and standardize each variable of the centered data by its standard deviation
+        for iVar in range(nVars):
+            current_train = X_train[:, iVar]
+            current_test = X_test[:, iVar]
+            std_train = torch.std(current_train)
+            std_test = torch.std(current_test)
+            standardize_train = torch.div(current_train, std_train)
+            standardize_test = torch.div(current_test, std_test)
+            # save standardized columns in new tensor
+            X_train_s.append(standardize_train)
+            X_test_s.append(standardize_test)
+        X_train_s = torch.stack(X_train_s, dim=1)
+        X_test_s = torch.stack(X_test_s, dim=1)
+        # same computation for features saved in y_*
+        y_train = data_dict['y_train']
+        y_test = data_dict['y_test']
+        std_train = torch.std(y_train)
+        std_test = torch.std(y_test)
+        y_train_s = torch.div(y_train, std_train)
+        y_test_s = torch.div(y_test, std_test)
+        # update the dictionary with new standardized values and return it
+        # data_dict['X_train'] = X_train_s
+        # data_dict['X_test'] = X_test_s
+        # data_dict['y_train'] = y_train_s
+        # data_dict['y_test'] = y_test_s
+        # TODO test in small example jupyter notebook, if this works
+        data_dict.update({'X_train': X_train_s, 'X_test': X_test_s, 'y_train': y_train_s, 'y_test': y_test_s})
+        return data_dict
 
     def tensor2list(self, unformattedDataset):
         """

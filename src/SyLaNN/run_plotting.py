@@ -11,15 +11,15 @@ gamma_start, gamma_stop = 0, 1+gamma_nSteps
 gamma_list = list(range(gamma_start, gamma_stop))
 
 # folder name and file name (without gammaIdx numbering)
-date_str = '2022-07-05'
-time_str = '18-16-40'
-folder_name = date_str + '_SyLaNNsimulation'
+date_str = '2022-08-17'
+time_str = '10-12-06'
+folder_name = date_str + '_LinearMiniTest-500epochs-DivLayeron-BRon'
 if os.path == 'nt': # Windows
     folder_path = folder_name + '\\'
 else: # Linux 
     folder_path = folder_name + '/'
 # Note: leave out idx numbering and file format (.json) as this will change during the results loading loop
-simulation_name = '_LangmuirIsotherm_gammaIdx'
+simulation_name = '_LinearMiniTest_whiteNoise_s_gammaIdx' # '_LangmuirIsotherm_gammaIdx'
 time_simulation_name = time_str + simulation_name
 path_name = folder_path + time_simulation_name
 file_format = '.json'
@@ -74,7 +74,7 @@ def linePlot_traintesterror_logscale(epochs, train_error, test_error, plot_saved
     plt.close()
 
 ######################## PLOTS #########################
-plot_folder_name = date_str + '_plots' + simulation_name
+plot_folder_name = date_str + '_plots' + simulation_name + '_BR-on-DivLayer-on'
 try:
     os.mkdir(plot_folder_name)
 except OSError:
@@ -103,7 +103,8 @@ for plotIdx in gamma_list:
     prediction = eval(current_results['found_eq'])
     # TODO find way to cut predicted results vars!
     # TODO why exp etc with Python's math module?
-    prediction_list = [prediction(i,1,1) for i in x_domain]
+    # prediction_list = [prediction(i,1,1) for i in x_domain]
+    prediction_list = [prediction(i) for i in x_domain]
     linePlot_pred_vs_ref(x_domain, prediction_list, ref_eq_list, path_saveTo)
 
     # plot training and testing errors

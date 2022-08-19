@@ -345,7 +345,7 @@ class Product(BaseFunction2):
         Constructor method, inherits from BaseFunction2 with adjusted norm parameter
         
         :param norm: Normalizing factor of BaseFunction2, default 0.1
-        :type norm: int
+        :type norm: float
         """
         super().__init__(norm=norm)
 
@@ -397,12 +397,14 @@ class Quotient(BaseFunction2):
     A class for the mathematical operator applying the quotient of two inputs.
     Takes BaseFunction2 as an argument.
     """
-    def __init__(self, norm=0.1, threshold=0.5):
+    def __init__(self, norm=0.1, threshold=1):
         """
         Constructor method, inherits from BaseFunction2 with adjusted norm parameter
         
         :param norm: Normalizing factor of BaseFunction2, default 0.1
-        :type norm: int
+        :type norm: float
+        :param threshold: Threshold for the quotient's denominator, default 1
+        :type threshold: int
         """
         super().__init__(norm=norm)
         self.thres = threshold
@@ -493,3 +495,16 @@ def count_binaryFcts(fcts):
         if isinstance(fct, BaseFunction2):
             i += 1
     return i
+
+
+default_func = [
+                *[Constant()] * 2,
+                *[Identity()] * 4,
+                *[Square()] * 4,
+                *[Exp()] * 2,
+                *[Product()] * 2
+                ]
+
+default_divLayer = [
+                    *[Quotient()] * 14 # same number of nodes like symbolic layer!
+                    ]
