@@ -48,25 +48,33 @@ if __name__ == "__main__":
 
         # generate data, if no dataset is given
         manageData_obj = dm.DataManager()
-        data_file_name = "2022-08-19_data_sqDiv_whiteNoise_s.json"
+        data_file_name = "2022-08-31_data_2Dpoly_whiteNoise.json"
         loadedDatasets_withConfigs = manageData_obj.loadDataset(load_folder_path, data_file_name)
         n_params = loadedDatasets_withConfigs['x_dim']
-
-        # create Symbolic-Layered Neural Network (short SyLaNN)
-        # mySyLaNN = SyLaNN.SyLaNet(n_hiddenLayers=net_dict['n_hidden'], fcts=net_dict['symbolic_layer'], data_dim=n_params, checkDivLayer=net_dict['checkDivLayer'], fctsDiv=net_dict['symbolic_layer_div'])
-
+        
         # training of network with given data (generated or loaded and formatted previously)
         # and save to file in corresponding folder (encoded with date and time when simulation started)
-        gamma_nSteps = 10
-        gamma_step = 1/gamma_nSteps
-        gamma_start, gamma_stop = 0, 1+gamma_step # regular values for L1 ratio
-        gamma_values = [*np.arange(gamma_start, gamma_stop, gamma_step)]
-        for gamma_idx, gamma_val in enumerate(gamma_values):
-            # create Symbolic-Layered Neural Network (short SyLaNN)
-            mySyLaNN = SyLaNN.SyLaNet(net_dict, data_dim=n_params)
-            simulationResults_dict = mySyLaNN.train(loadedDatasets_withConfigs, trainConfig_dict, gamma_val)
-            # current L1 ratio (gamma_val) is saved within result dictionary
-            file_name = loadedDatasets_withConfigs['saveFile_name'] + "_gammaIdx" + str(gamma_idx) + ".json"
-            save_file_name = save_folder_path + curr_time + file_name
-            # manageData_obj.saveSimulation(save_file_name, generateData_dict, net_dict, trainConfig_dict, simulationResults_dict)
-            manageData_obj.saveSimulation(save_file_name, loadedDatasets_withConfigs, net_dict, trainConfig_dict, simulationResults_dict)
+        # TODO better if else conditions
+        if trainConfig_dict['loop1Reg'] == 'ElasticNetapprox':
+            gamma_nSteps = 10
+            gamma_step = 1/gamma_nSteps
+            gamma_start, gamma_stop = 0, 1+gamma_step # regular values for L1 ratio
+            gamma_values = [*np.arange(gamma_start, gamma_stop, gamma_step)]
+            for gamma_idx, gamma_val in enumerate(gamma_values):
+                # create Symbolic-Layered Neural Network (short SyLaNN)
+                mySyLaNN = SyLaNN.SyLaNet(net_dict, data_dim=n_params)
+                simulationResults_dict = mySyLaNN.train(loadedDatasets_withConfigs, trainConfig_dict, gamma_val)
+                # current L1 ratio (gamma_val) is saved within result dictionary
+                file_name = loadedDatasets_withConfigs['saveFile_name'] + "_gammaIdx" + str(gamma_idx) + ".json"
+                save_file_name = save_folder_path + curr_time + file_name
+                # manageData_obj.saveSimulation(save_file_name, generateData_dict, net_dict, trainConfig_dict, simulationResults_dict)
+                manageData_obj.saveSimulation(save_file_name, loadedDatasets_withConfigs, net_dict, trainConfig_dict, simulationResults_dict)
+        else: # all other penalty options aside from elastic net which do not have a screening parameter to iterate
+                # create Symbolic-Layered Neural Network (short SyLaNN)
+                mySyLaNN = SyLaNN.SyLaNet(net_dict, data_dim=n_params)
+                simulationResults_dict = mySyLaNN.train(loadedDatasets_withConfigs, trainConfig_dict)
+                # TODO make it visible in file name which penalty is used?
+                file_name = loadedDatasets_withConfigs['saveFile_name'] + ".json"
+                save_file_name = save_folder_path + curr_time + file_name
+                # manageData_obj.saveSimulation(save_file_name, generateData_dict, net_dict, trainConfig_dict, simulationResults_dict)
+                manageData_obj.saveSimulation(save_file_name, loadedDatasets_withConfigs, net_dict, trainConfig_dict, simulationResults_dict)

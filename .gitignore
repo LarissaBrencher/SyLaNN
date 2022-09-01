@@ -130,9 +130,10 @@ dmypy.json
 .vscode/settings.json
 # *.json # include JSONs for generated datasets to reproduce results
 
-# Local simulation results
-*_SyLaNNsimulation
+# Local simulation results and my report specific scripts
+2022*
 *_plots_*
+postprocessing_reportExamples.py
 
 # Synology Client (NAS) sync files and folders
 desktop.ini

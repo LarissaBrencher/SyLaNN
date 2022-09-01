@@ -7,7 +7,7 @@ string lambda expression to simplify further processing.
 """
 
 import inspect
-from numpy import std
+import numpy as np
 import torch
 import json
 from sympy import symbols
@@ -44,11 +44,11 @@ class DataManager():
         # uniform-distributed:
         # inputX_train = (range_max_train - range_min_train) * torch.rand([generateData_dict['n_train'], x_dim]) + range_min_train
         # normal-distributed:
-        # mean_train = (range_max_train - range_min_train) / 2
-        # std_train = 1
+        mean_train = (range_max_train - range_min_train) / 2
+        std_train = np.sqrt(np.abs(range_max_train - range_min_train))
         # for specific mean, std: (range_min_train - mean_train) / std_train, (range_max_train - mean_train) / std_train
         a_train, b_train = range_min_train, range_max_train
-        inputX_train = torch.from_numpy(truncnorm.rvs(a_train, b_train, size=[generateData_dict['n_train'], x_dim]))
+        inputX_train = torch.from_numpy(truncnorm.rvs(a_train, b_train, loc=mean_train, scale=std_train, size=[generateData_dict['n_train'], x_dim]))
         outputY_train = torch.tensor([[ref_fct(*x_i)] for x_i in inputX_train])
         # create testing data
         range_min_test = generateData_dict['domain_test'][0]

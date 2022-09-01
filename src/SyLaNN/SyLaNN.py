@@ -401,8 +401,10 @@ class SyLaNet(nn.Module):
         self.alpha_reg = trainConfig_dict['error_reg_factor']
         self.updateBR_everyNepoch = trainConfig_dict['updateBRparams_every_n_epoch']
         if self.chooseBR is False: # in order to avoid wrong prefactor values when BR is off
-            assert self.beta_SSE == 1, "Please set beta SSE prefactor to one, if Bayesian regularization is not used."
-            assert self.alpha_reg == 1, "Please set alpha reg prefactor to one, if Bayesian regularization is not used."
+            # assert self.beta_SSE == 1, "Please set beta SSE prefactor to one, if Bayesian regularization is not used."
+            # assert self.alpha_reg == 1, "Please set alpha reg prefactor to one, if Bayesian regularization is not used."
+            self.beta_SSE = 1
+            self.alpha_reg = 1
 
         beta_SSE = [self.beta_SSE]
         alpha_reg = [self.alpha_reg]
@@ -445,8 +447,9 @@ class SyLaNet(nn.Module):
                         hessian_SSE = self.loss_hessian(squared_loss)
                         hessian_penalty = regObj1.calculate_hessian(self.get_weights_tensor(), self.approx_eps, gamma_val)
                         hessian_total = self.beta_SSE*hessian_SSE+self.alpha_reg*hessian_penalty
-                        H_pinv = torch.linalg.pinv(hessian_total)
-                        tr_Hinv = torch.trace(H_pinv)
+                        # H_pinv = torch.linalg.pinv(hessian_total)
+                        # tr_Hinv = torch.trace(H_pinv)
+                        tr_Hinv = 1/(torch.trace(hessian_total))
                         N_p = sum(p.numel() for p in self.parameters())
                         N_eff = N_p - self.alpha_reg * tr_Hinv.item()
                         N_D = data.size(dim=0)
@@ -482,8 +485,9 @@ class SyLaNet(nn.Module):
                         hessian_SSE = self.loss_hessian(squared_loss)
                         hessian_penalty = regObj2.calculate_hessian(self.get_weights_tensor(), self.approx_eps, gamma_val)
                         hessian_total = self.beta_SSE*hessian_SSE+self.alpha_reg*hessian_penalty
-                        H_pinv = torch.linalg.pinv(hessian_total)
-                        tr_Hinv = torch.trace(H_pinv)
+                        # H_pinv = torch.linalg.pinv(hessian_total)
+                        # tr_Hinv = torch.trace(H_pinv)
+                        tr_Hinv = 1/(torch.trace(hessian_total))
                         N_p = sum(p.numel() for p in self.parameters())
                         N_eff = N_p - self.alpha_reg * tr_Hinv.item()
                         N_D = data.size(dim=0)
@@ -519,8 +523,9 @@ class SyLaNet(nn.Module):
                         hessian_SSE = self.loss_hessian(squared_loss)
                         hessian_penalty = regObj3.calculate_hessian(self.get_weights_tensor(), self.approx_eps, gamma_val)
                         hessian_total = self.beta_SSE*hessian_SSE+self.alpha_reg*hessian_penalty
-                        H_pinv = torch.linalg.pinv(hessian_total)
-                        tr_Hinv = torch.trace(H_pinv)
+                        # H_pinv = torch.linalg.pinv(hessian_total)
+                        # tr_Hinv = torch.trace(H_pinv)
+                        tr_Hinv = 1/(torch.trace(hessian_total))
                         N_p = sum(p.numel() for p in self.parameters())
                         N_eff = N_p - self.alpha_reg * tr_Hinv.item()
                         N_D = data.size(dim=0)
@@ -580,14 +585,15 @@ class SyLaNet(nn.Module):
                         hessian_SSE = self.loss_hessian(squared_loss)
                         hessian_penalty = regObj.calculate_hessian(self.get_weights_tensor(), self.approx_eps, gamma_val)
                         hessian_total = self.beta_SSE*hessian_SSE+self.alpha_reg*hessian_penalty
-                        H_pinv = torch.linalg.pinv(hessian_total)
-                        tr_Hinv = torch.trace(H_pinv)
+                        # H_pinv = torch.linalg.pinv(hessian_total)
+                        # tr_Hinv = torch.trace(H_pinv)
+                        tr_Hinv = 1/(torch.trace(hessian_total))
                         N_p = sum(p.numel() for p in self.parameters())
                         N_eff = N_p - self.alpha_reg * tr_Hinv.item()
                         N_D = data.size(dim=0)
                         # update prefactors
                         E_D = squared_loss.sum() # sum of squared errors
-                        E_W = reg_loss #+div_loss # sum of squared weights
+                        E_W = reg_loss+div_loss # sum of squared weights
                         self.alpha_reg = N_eff / (2*E_W.item())
                         self.beta_SSE = (N_D - N_eff) / (2*E_D.item())
                         alpha_reg.append(self.alpha_reg)
@@ -632,14 +638,15 @@ class SyLaNet(nn.Module):
                         hessian_SSE = self.loss_hessian(squared_loss)
                         hessian_penalty = regObj.calculate_hessian(self.get_weights_tensor(), self.approx_eps, gamma_val)
                         hessian_total = self.beta_SSE*hessian_SSE+self.alpha_reg*hessian_penalty
-                        H_pinv = torch.linalg.pinv(hessian_total)
-                        tr_Hinv = torch.trace(H_pinv)
+                        # H_pinv = torch.linalg.pinv(hessian_total)
+                        # tr_Hinv = torch.trace(H_pinv)
+                        tr_Hinv = 1/(torch.trace(hessian_total))
                         N_p = sum(p.numel() for p in self.parameters())
                         N_eff = N_p - self.alpha_reg * tr_Hinv.item()
                         N_D = data.size(dim=0)
                         # update prefactors
                         E_D = squared_loss.sum() # sum of squared errors
-                        E_W = reg_loss #+div_loss # sum of squared weights
+                        E_W = reg_loss+div_loss # sum of squared weights
                         self.alpha_reg = N_eff / (2*E_W.item())
                         self.beta_SSE = (N_D - N_eff) / (2*E_D.item())
                         alpha_reg.append(self.alpha_reg)
@@ -684,14 +691,15 @@ class SyLaNet(nn.Module):
                         hessian_SSE = self.loss_hessian(squared_loss)
                         hessian_penalty = regObj.calculate_hessian(self.get_weights_tensor(), self.approx_eps, gamma_val)
                         hessian_total = self.beta_SSE*hessian_SSE+self.alpha_reg*hessian_penalty
-                        H_pinv = torch.linalg.pinv(hessian_total)
-                        tr_Hinv = torch.trace(H_pinv)
+                        # H_pinv = torch.linalg.pinv(hessian_total)
+                        # tr_Hinv = torch.trace(H_pinv)
+                        tr_Hinv = 1/(torch.trace(hessian_total))
                         N_p = sum(p.numel() for p in self.parameters())
                         N_eff = N_p - self.alpha_reg * tr_Hinv.item()
                         N_D = data.size(dim=0)
                         # update prefactors
                         E_D = squared_loss.sum() # sum of squared errors
-                        E_W = reg_loss # +div_loss # sum of squared weights
+                        E_W = reg_loss+div_loss # sum of squared weights
                         self.alpha_reg = N_eff / (2*E_W.item())
                         self.beta_SSE = (N_D - N_eff) / (2*E_D.item())
                         alpha_reg.append(self.alpha_reg)
@@ -727,6 +735,7 @@ class SyLaNet(nn.Module):
                     div_loss = 0.
                     if self.checkDivLayer is True:
                         div_layer = self.hidden_layers[-1]
+                        # self.divThres = 1.0/np.sqrt(epo + 1)
                         div_loss = div_layer.divPenalty(divThreshold=self.divThres)
                     train_loss = self.beta_SSE*SSE_loss + self.alpha_reg*reg_loss + div_loss
                     train_loss.backward()
@@ -738,19 +747,20 @@ class SyLaNet(nn.Module):
                     train_loss_list.append(train_loss_val)
 
                     # update prefactors every n-th epoch
-                    if (epo != 0) and ((epo % self.updateBR_everyNepoch) == 0):
+                    if (epo != 0) and ((epo % self.updateBR_everyNepoch) == 0) and (self.chooseBR is True):
                         squared_loss = (self(data) - target).pow(2)
                         hessian_SSE = self.loss_hessian(squared_loss)
                         hessian_penalty = regObj.calculate_hessian(self.get_weights_tensor(), self.approx_eps, gamma_val)
                         hessian_total = self.beta_SSE*hessian_SSE+self.alpha_reg*hessian_penalty
-                        H_pinv = torch.linalg.pinv(hessian_total)
-                        tr_Hinv = torch.trace(H_pinv)
+                        # H_pinv = torch.linalg.pinv(hessian_total)
+                        # tr_Hinv = torch.trace(H_pinv)
+                        tr_Hinv = 1/(torch.trace(hessian_total))
                         N_p = sum(p.numel() for p in self.parameters())
                         N_eff = N_p - self.alpha_reg * tr_Hinv.item()
                         N_D = data.size(dim=0)
                         # update prefactors
                         E_D = squared_loss.sum() # sum of squared errors
-                        E_W = reg_loss #+div_loss # sum of squared weights
+                        E_W = reg_loss+div_loss # sum of squared weights
                         self.alpha_reg = N_eff / (2*E_W.item())
                         self.beta_SSE = (N_D - N_eff) / (2*E_D.item())
                         alpha_reg.append(self.alpha_reg)
@@ -778,6 +788,7 @@ class SyLaNet(nn.Module):
                     reg_loss = regObj(self.get_weights_tensor(), self.lmb_reg, self.approx_eps, gamma_val)
                     if self.checkDivLayer is True:
                         div_layer = self.hidden_layers[-1]
+                        # self.divThres = 1.0/np.sqrt(epo + 1)
                         div_loss = div_layer.divPenalty(divThreshold=self.divThres)
                     train_loss = self.beta_SSE*SSE_loss + self.alpha_reg*reg_loss + div_loss
                     train_loss.backward()
@@ -789,19 +800,20 @@ class SyLaNet(nn.Module):
                     train_loss_list.append(train_loss_val)
 
                     # update prefactors every n-th epoch
-                    if (epo != 0) and ((epo % self.updateBR_everyNepoch) == 0):
+                    if (epo != 0) and ((epo % self.updateBR_everyNepoch) == 0) and (self.chooseBR is True):
                         squared_loss = (self(data) - target).pow(2)
                         hessian_SSE = self.loss_hessian(squared_loss)
                         hessian_penalty = regObj.calculate_hessian(self.get_weights_tensor(), self.approx_eps, gamma_val)
                         hessian_total = self.beta_SSE*hessian_SSE+self.alpha_reg*hessian_penalty
-                        H_pinv = torch.linalg.pinv(hessian_total)
-                        tr_Hinv = torch.trace(H_pinv)
+                        # H_pinv = torch.linalg.pinv(hessian_total)
+                        # tr_Hinv = torch.trace(H_pinv)
+                        tr_Hinv = 1/(torch.trace(hessian_total))
                         N_p = sum(p.numel() for p in self.parameters())
                         N_eff = N_p - self.alpha_reg * tr_Hinv.item()
                         N_D = data.size(dim=0)
                         # update prefactors
                         E_D = squared_loss.sum() # sum of squared errors
-                        E_W = reg_loss #+div_loss # sum of squared weights
+                        E_W = reg_loss+div_loss # sum of squared weights
                         self.alpha_reg = N_eff / (2*E_W.item())
                         self.beta_SSE = (N_D - N_eff) / (2*E_D.item())
                         alpha_reg.append(self.alpha_reg)
@@ -829,6 +841,7 @@ class SyLaNet(nn.Module):
                     reg_loss = regObj(self.get_weights_tensor(), self.lmb_reg, self.approx_eps, gamma_val)
                     if self.checkDivLayer is True:
                         div_layer = self.hidden_layers[-1]
+                        # self.divThres = 1.0/np.sqrt(epo + 1)
                         div_loss = div_layer.divPenalty(divThreshold=self.divThres)
                     train_loss = self.beta_SSE*SSE_loss + self.alpha_reg*reg_loss + div_loss
                     train_loss.backward()
@@ -840,19 +853,20 @@ class SyLaNet(nn.Module):
                     train_loss_list.append(train_loss_val)
 
                     # update prefactors every n-th epoch
-                    if (epo != 0) and ((epo % self.updateBR_everyNepoch) == 0):
+                    if (epo != 0) and ((epo % self.updateBR_everyNepoch) == 0) and (self.chooseBR is True):
                         squared_loss = (self(data) - target).pow(2)
                         hessian_SSE = self.loss_hessian(squared_loss)
                         hessian_penalty = regObj.calculate_hessian(self.get_weights_tensor(), self.approx_eps, gamma_val)
                         hessian_total = self.beta_SSE*hessian_SSE+self.alpha_reg*hessian_penalty
-                        H_pinv = torch.linalg.pinv(hessian_total)
-                        tr_Hinv = torch.trace(H_pinv)
+                        # H_pinv = torch.linalg.pinv(hessian_total)
+                        # tr_Hinv = torch.trace(H_pinv)
+                        tr_Hinv = 1/(torch.trace(hessian_total))
                         N_p = sum(p.numel() for p in self.parameters())
                         N_eff = N_p - self.alpha_reg * tr_Hinv.item()
                         N_D = data.size(dim=0)
                         # update prefactors
                         E_D = squared_loss.sum() # sum of squared errors
-                        E_W = reg_loss # +div_loss # sum of squared weights
+                        E_W = reg_loss+div_loss # sum of squared weights
                         self.alpha_reg = N_eff / (2*E_W.item())
                         self.beta_SSE = (N_D - N_eff) / (2*E_D.item())
                         alpha_reg.append(self.alpha_reg)
@@ -892,15 +906,18 @@ class SyLaNet(nn.Module):
             if self.checkDivLayer is True:
                 fcts_div = self.fctsDiv
             expr = eq_print.network(weights, fcts, vars_str[:n_inputArgs], threshold=trainConfig_dict['cutWeights_threshold'], checkDivLayer=self.checkDivLayer, fctsDiv=fcts_div)
+            print("Predicted expression:")
             print(expr)
 
 
         err_test_final.append(err_test_list[-1])
         found_eq.append(expr)
+        #found_eq3 = found_eq[0,0]
+        #found_eq2 = found_eq[0][0]
 
         # create dictionary of results
         result_dict = {
-            'found_eq' : found_eq,
+            'found_eq' : found_eq[0],
             'elasticNet_L1ratio' : gamma_val,
             'simulation_time' : total_time,
             'beta_SSE' : beta_SSE,
