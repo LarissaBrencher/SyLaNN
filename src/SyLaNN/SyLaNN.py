@@ -570,7 +570,7 @@ class SyLaNet(nn.Module):
                         div_layer = self.hidden_layers[-1]
                         # self.divThres = 1.0/np.sqrt(epo + 1)
                         div_loss = div_layer.divPenalty(divThreshold=self.divThres)
-                    train_loss = self.beta_SSE*SSE_loss + self.alpha_reg*reg_loss + div_loss
+                    train_loss = self.beta_SSE*SSE_loss + self.alpha_reg*(reg_loss + div_loss)
                     train_loss.backward()
                     optimizer.step()
 
@@ -623,7 +623,7 @@ class SyLaNet(nn.Module):
                         div_layer = self.hidden_layers[-1]
                         # self.divThres = 1.0/np.sqrt(epo + 1)
                         div_loss = div_layer.divPenalty(divThreshold=self.divThres)
-                    train_loss = self.beta_SSE*SSE_loss + self.alpha_reg*reg_loss + div_loss
+                    train_loss = self.beta_SSE*SSE_loss + self.alpha_reg*(reg_loss + div_loss)
                     train_loss.backward()
                     optimizer.step()
                     
@@ -676,7 +676,7 @@ class SyLaNet(nn.Module):
                         div_layer = self.hidden_layers[-1]
                         # self.divThres = 1.0/np.sqrt(epo + 1)
                         div_loss = div_layer.divPenalty(divThreshold=self.divThres)
-                    train_loss = self.beta_SSE*SSE_loss + self.alpha_reg*reg_loss + div_loss
+                    train_loss = self.beta_SSE*SSE_loss + self.alpha_reg*(reg_loss + div_loss)
                     train_loss.backward()
                     optimizer.step()
                     
@@ -737,7 +737,7 @@ class SyLaNet(nn.Module):
                         div_layer = self.hidden_layers[-1]
                         # self.divThres = 1.0/np.sqrt(epo + 1)
                         div_loss = div_layer.divPenalty(divThreshold=self.divThres)
-                    train_loss = self.beta_SSE*SSE_loss + self.alpha_reg*reg_loss + div_loss
+                    train_loss = self.beta_SSE*SSE_loss + self.alpha_reg*(reg_loss + div_loss)
                     train_loss.backward()
                     optimizer.step()
 
@@ -790,7 +790,7 @@ class SyLaNet(nn.Module):
                         div_layer = self.hidden_layers[-1]
                         # self.divThres = 1.0/np.sqrt(epo + 1)
                         div_loss = div_layer.divPenalty(divThreshold=self.divThres)
-                    train_loss = self.beta_SSE*SSE_loss + self.alpha_reg*reg_loss + div_loss
+                    train_loss = self.beta_SSE*SSE_loss + self.alpha_reg*(reg_loss + div_loss)
                     train_loss.backward()
                     optimizer.step()
                     
@@ -843,7 +843,7 @@ class SyLaNet(nn.Module):
                         div_layer = self.hidden_layers[-1]
                         # self.divThres = 1.0/np.sqrt(epo + 1)
                         div_loss = div_layer.divPenalty(divThreshold=self.divThres)
-                    train_loss = self.beta_SSE*SSE_loss + self.alpha_reg*reg_loss + div_loss
+                    train_loss = self.beta_SSE*SSE_loss + self.alpha_reg*(reg_loss + div_loss)
                     train_loss.backward()
                     optimizer.step()
                     
@@ -912,8 +912,6 @@ class SyLaNet(nn.Module):
 
         err_test_final.append(err_test_list[-1])
         found_eq.append(expr)
-        #found_eq3 = found_eq[0,0]
-        #found_eq2 = found_eq[0][0]
 
         # create dictionary of results
         result_dict = {

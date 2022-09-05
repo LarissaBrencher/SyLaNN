@@ -44,11 +44,12 @@ class DataManager():
         # uniform-distributed:
         # inputX_train = (range_max_train - range_min_train) * torch.rand([generateData_dict['n_train'], x_dim]) + range_min_train
         # normal-distributed:
-        mean_train = (range_max_train - range_min_train) / 2
-        std_train = np.sqrt(np.abs(range_max_train - range_min_train))
+        # mean_train = (range_max_train - range_min_train) / 2
+        # std_train = np.sqrt(np.abs(range_max_train - range_min_train))
+        # loc=mean_train, scale=std_train, 
         # for specific mean, std: (range_min_train - mean_train) / std_train, (range_max_train - mean_train) / std_train
         a_train, b_train = range_min_train, range_max_train
-        inputX_train = torch.from_numpy(truncnorm.rvs(a_train, b_train, loc=mean_train, scale=std_train, size=[generateData_dict['n_train'], x_dim]))
+        inputX_train = torch.from_numpy(truncnorm.rvs(a_train, b_train, size=[generateData_dict['n_train'], x_dim]))
         outputY_train = torch.tensor([[ref_fct(*x_i)] for x_i in inputX_train])
         # create testing data
         range_min_test = generateData_dict['domain_test'][0]
@@ -215,11 +216,6 @@ class DataManager():
         y_train_s = torch.div(y_train, std_train)
         y_test_s = torch.div(y_test, std_test)
         # update the dictionary with new standardized values and return it
-        # data_dict['X_train'] = X_train_s
-        # data_dict['X_test'] = X_test_s
-        # data_dict['y_train'] = y_train_s
-        # data_dict['y_test'] = y_test_s
-        # TODO test in small example jupyter notebook, if this works
         data_dict.update({'X_train': X_train_s, 'X_test': X_test_s, 'y_train': y_train_s, 'y_test': y_test_s})
         return data_dict
 

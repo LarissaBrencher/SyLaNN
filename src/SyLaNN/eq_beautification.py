@@ -143,7 +143,7 @@ def eq_beautifPrint(checkEN, eqs_dict, gamma_list=[]):
             print(eqs_dict[gammaIdx]['long_expanded'])
             alternate_forms = removeDuplicates_dictValues(eqs_dict[gammaIdx])
             alternate_forms.pop('long_expanded') # remove initial expression
-            print('Alternate forms: ')
+            print('Alternate (approximated) forms: ')
             for value in alternate_forms.values():
                 print(value)
             # for better readability after each gamma iteration (bottom line)
@@ -153,7 +153,7 @@ def eq_beautifPrint(checkEN, eqs_dict, gamma_list=[]):
         print(eqs_dict['long_expanded'])
         alternate_forms = removeDuplicates_dictValues(eqs_dict)
         alternate_forms.pop('long_expanded') # remove initial expression
-        print('Alternate forms: ')
+        print('Alternate (approximated) forms: ')
         for value in alternate_forms.values():
             print(value)
 
