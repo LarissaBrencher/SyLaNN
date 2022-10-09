@@ -23,7 +23,5 @@ def createNoise(data_size, noise_std=0.01, type_str='white'):
     if type_str.__eq__('white'):
         # std choice according to example in
         # Learning Equations for Extrapolation and Control by Sahoo, Lampert, Martius
-        # TODO make user specific choice in dict
-        # TODO add user choice bool for noise
         noise = torch.normal(mean=0, std=noise_std, size=data_size)
         return noise

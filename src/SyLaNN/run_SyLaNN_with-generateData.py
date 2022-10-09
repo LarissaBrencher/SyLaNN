@@ -1,7 +1,3 @@
-# TODO add documentation (first in general what the main does, then step description)
-# TODO main is actually specific example. Extract to examples?
-# TODO extact as file/function: generate folder (name, directory etc.), run example
-
 # packages
 import torch
 import numpy as np

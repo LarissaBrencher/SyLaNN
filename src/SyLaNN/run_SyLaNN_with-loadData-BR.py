@@ -1,9 +1,3 @@
-# TODO same as main.py
-# main_BR.py for Bayesian regularization settings plus elastic net (gamma iteration)
-# save simulation results per gamma iteration -> post processing evaluation script?
-# load data set instead of generating it each time
-# Example Freundlich isotherm equation
-
 # packages
 import torch
 import numpy as np
@@ -48,13 +42,12 @@ if __name__ == "__main__":
 
         # generate data, if no dataset is given
         manageData_obj = dm.DataManager()
-        data_file_name = "2022-08-31_data_2Dpoly_whiteNoise.json"
+        data_file_name = "2022-08-31_data_Langmuir_whiteNoise_s.json"
         loadedDatasets_withConfigs = manageData_obj.loadDataset(load_folder_path, data_file_name)
         n_params = loadedDatasets_withConfigs['x_dim']
         
         # training of network with given data (generated or loaded and formatted previously)
         # and save to file in corresponding folder (encoded with date and time when simulation started)
-        # TODO better if else conditions
         if trainConfig_dict['loop1Reg'] == 'ElasticNetapprox':
             gamma_nSteps = 10
             gamma_step = 1/gamma_nSteps
@@ -73,7 +66,6 @@ if __name__ == "__main__":
                 # create Symbolic-Layered Neural Network (short SyLaNN)
                 mySyLaNN = SyLaNN.SyLaNet(net_dict, data_dim=n_params)
                 simulationResults_dict = mySyLaNN.train(loadedDatasets_withConfigs, trainConfig_dict)
-                # TODO make it visible in file name which penalty is used?
                 file_name = loadedDatasets_withConfigs['saveFile_name'] + ".json"
                 save_file_name = save_folder_path + curr_time + file_name
                 # manageData_obj.saveSimulation(save_file_name, generateData_dict, net_dict, trainConfig_dict, simulationResults_dict)

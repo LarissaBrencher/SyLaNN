@@ -1,15 +1,5 @@
 # Symbolic-Layered Neural Network (SyLaNN)
 
-Add a description
+The Symbolic-Layered Neural Network predicts an analytical equation (correlation) from a given dataset. Its architecture is based off the equation learner approach (EQL) and in the same way the SyLaNN consists of customized hidden layers in which mathematical operators are defined. Possible choices of mathematical operators include the identity function, a constant, the square function, the exponential function, multiplication and division.
 
-## To Do list
-
-- [x] write docstrings
-- [x] add documentation creation via Sphinx
-- [ ] add examples? (extra folder, tutorial, how to use?)
-- [ ] change md to rst (README, CODE_OF_CONDUCT etc.)
-- [ ] write tests
-- [x] add setup.py for packaging
-- [x] add versioneer?
-- [ ] add more comments in code
-- [ ] CI/CD, some GitHub actions, ...
+![](./images/sylann.png)

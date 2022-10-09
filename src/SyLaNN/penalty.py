@@ -68,25 +68,19 @@ class Penalty(nn.Module):
         else:
             raise ValueError("Wrong value chosen for regularizarion loss. \n Please re-evaluate the dictionary for training the Symbolic-Layered Neural Network.")
 
-    def calculate_jacobian(self, weights, eps=0.001):
-        if self.name is None:
-            raise ValueError("No regularization is chosen. Consequently, the Jacobian cannot be computed.")
-        elif self.name.__eq__('L0'):
-            raise ValueError("L0 regularization is chosen. Due to the non-differentiability the Jacobian cannot be computed.")
-        elif self.name.__eq__('L1'):
-            raise ValueError("L1 regularization is chosen. Due to the non-differentiability the Jacobian cannot be computed. If L1 with BR optimization is desired, please choose the L1 approximation.")
-        elif self.name.__eq__('L2'):
-            pass
-        elif self.name.__eq__('L1approx'):
-            pass
-        elif self.name.__eq__('L12approx'):
-            pass
-        elif self.name.__eq__('ElasticNetapprox'):
-            pass
-        else:
-            raise ValueError("Wrong value chosen for regularizarion loss. \n Please re-evaluate the dictionary for training the Symbolic-Layered Neural Network.")
-
     def calculate_hessian(self, input_tensor, eps=0.001, gamma=None):
+        """
+        Calculates the Hessian matrix for a given input tensor.
+
+        :param input\_tensor: Tensor which Hessian matrix is to be determined.
+        :type input\_tensor: Tensor
+        :param eps: Threshold for L1 approximation, default 0.001
+        :type eps: float
+        :param gamma: L1 ratio for elastic net penalty, default None
+        :type gamma: float
+        :return: Hessian matrix of given input
+        :rtype: Tensor
+        """
         weights = torch.nn.utils.parameters_to_vector(input_tensor)
         hessian = torch.zeros(len(weights))
         if self.name is None:
@@ -123,6 +117,16 @@ class Penalty(nn.Module):
 
 
 def L1_approx(input_tensor, eps=0.001):
+    """
+    Calculates a smooth approximation of the L1 regularization.
+
+    :param input\_tensor: Input values with which the L1 regularization is computed.
+    :type input\_tensor: Tensor
+    :param eps: Threshold for smooth function, default 0.001
+    :type eps: float
+    :return: Computed regularization (smooth L1)
+    :rtype: float
+    """
     if type(input_tensor) == list:
         return sum([L1_approx(tensor, eps) for tensor in input_tensor])
     input_squared = torch.square(input_tensor)
@@ -130,6 +134,16 @@ def L1_approx(input_tensor, eps=0.001):
     return torch.sum(approx)
 
 def L12_approx(input_tensor, eps=0.001):
+    """
+    Calculates a smooth approximation of the L1/2 regularization.
+
+    :param input\_tensor: Input values with which the L1/2 regularization is computed.
+    :type input\_tensor: Tensor
+    :param eps: Threshold for smooth function, default 0.001
+    :type eps: float
+    :return: Computed regularization (smooth L1/2)
+    :rtype: float
+    """
     if type(input_tensor) == list:
         return sum([L12_approx(tensor, eps) for tensor in input_tensor])
     input_squared = torch.square(input_tensor) 
@@ -137,6 +151,16 @@ def L12_approx(input_tensor, eps=0.001):
     return torch.sum(approx)
 
 def elasticnet_approx(input_tensor, eps=0.001, l1ratio=0.5):
+    """
+    Calculates a smooth approximation of the elastic net penalty.
+
+    :param input\_tensor: Input values with which the elastic net penalty is computed.
+    :type input\_tensor: Tensor
+    :param eps: Threshold for smooth function, default 0.001
+    :type eps: float
+    :return: Computed regularization (smooth elastic net penalty)
+    :rtype: float
+    """
     if type(input_tensor) == list:
         return sum([elasticnet_approx(tensor, eps) for tensor in input_tensor])
     L1part = L1_approx(input_tensor, eps)
